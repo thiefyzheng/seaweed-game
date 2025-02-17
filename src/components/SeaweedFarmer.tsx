@@ -230,12 +230,12 @@ export default function SeaweedFarmer() {
           <div className="grid grid-cols-2 gap-4 text-center">
             <div className="flex items-center justify-center space-x-2">
               <DollarSign className="text-green-600" />
-              <span>${gameState.money}</span>
+              <span>${gameState.money.toFixed(2)}</span>
             </div>
             <Tooltip>
               <TooltipTrigger className="flex items-center justify-center space-x-2">
                 <Info className="text-blue-600" />
-                <span>Market Price: ${gameState.marketPrice}/kg</span>
+                <span>Market Price: ${gameState.marketPrice.toFixed(2)}/kg</span>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Market price affects harvest value</p>
