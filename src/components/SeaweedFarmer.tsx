@@ -175,7 +175,7 @@ export default function SeaweedFarmer() {
     seaweeds: [],
     marketPrice: 100,
     eventMessage: '',
-    passiveIncomeRate: 10,
+    passiveIncomeRate: 1,
   });
 
   const getGrowthStage = useCallback((age: number) => {
@@ -213,7 +213,7 @@ export default function SeaweedFarmer() {
 
     const passiveIncomeInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 10000);
+    }, 1000);
 
     return () => {
       clearInterval(gameInterval);
