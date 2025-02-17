@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useReducer, useEffect, useCallback } from 'react';
-import { AlertCircle, DollarSign, Info } from 'lucide-react';
+import { AlertCircle, DollarSign, Info, Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,14 @@ import {
 
 // Game constants
 const INITIAL_MONEY = 50;
-const UPDATE_INTERVAL = 2000;
-const MARKET_UPDATE_CHANCE = 0.6; // Increased market update frequency
+const UPDATE_INTERVAL = 1000; // Faster updates for shorter game
+const MARKET_UPDATE_CHANCE = 0.6;
+
+const WIN_CONDITION = {
+  EUCHEUMA: 5,
+  GRACILARIA: 4,
+  SARGASSUM: 3
+};
 
 const SEAWEED_TYPES = {
   EUCHEUMA: {
@@ -47,10 +53,10 @@ const MARKET_PRICE_RANGE = { MIN: 10, MAX: 100 };
 
 const GROWTH_STAGES = {
   SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.1 },
-  GROWING: { name: 'Growing', age: 3, multiplier: 0.5 },
-  MATURE: { name: 'Mature', age: 6, multiplier: 1.0 },
-  OPTIMAL: { name: 'Optimal', age: 9, multiplier: 1.5 },
-  OVERGROWN: { name: 'Overgrown', age: 12, multiplier: 0.3 }
+  GROWING: { name: 'Growing', age: 2, multiplier: 0.5 }, // Faster growth
+  MATURE: { name: 'Mature', age: 4, multiplier: 1.0 },
+  OPTIMAL: { name: 'Optimal', age: 6, multiplier: 1.5 },
+  OVERGROWN: { name: 'Overgrown', age: 8, multiplier: 0.3 }
 };
 
 // Game events with more variety
@@ -206,6 +212,8 @@ interface GameState {
   eventMessage: string;
   passiveIncomeRate: number;
   selectedSeaweedType: keyof typeof SEAWEED_TYPES;
+  harvestedCounts: Record<keyof typeof SEAWEED_TYPES, number>;
+  gameWon: boolean;
 }
 
 type GameAction = 
@@ -217,6 +225,12 @@ type GameAction =
   | { type: 'CLEAR_MESSAGE' }
   | { type: 'UPDATE_PASSIVE_INCOME' }
   | { type: 'SELECT_SEAWEED_TYPE'; payload: keyof typeof SEAWEED_TYPES };
+
+const checkWinCondition = (counts: Record<keyof typeof SEAWEED_TYPES, number>): boolean => {
+  return Object.entries(WIN_CONDITION).every(([type, required]) => 
+    counts[type as keyof typeof SEAWEED_TYPES] >= required
+  );
+};
 
 // Reducer for better state management
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -253,11 +267,22 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       // Use current market price and seaweed type multiplier for value
       const value = Math.round(state.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
 
+      const newCounts = {
+        ...state.harvestedCounts,
+        [seaweed.type]: state.harvestedCounts[seaweed.type] + 1
+      };
+
+      const gameWon = !state.gameWon && checkWinCondition(newCounts);
+
       return {
         ...state,
         money: state.money + value,
         seaweeds: state.seaweeds.filter(s => s.id !== action.payload),
-        eventMessage: `Harvested ${SEAWEED_TYPES[seaweed.type].name} for $${value}!`
+        harvestedCounts: newCounts,
+        gameWon,
+        eventMessage: gameWon 
+          ? "🎉 Congratulations! You've mastered seaweed farming!" 
+          : `Harvested ${SEAWEED_TYPES[seaweed.type].name} for $${value}!`
       };
 
     case 'UPDATE_GROWTH':
@@ -270,7 +295,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'UPDATE_MARKET':
-      const priceChange = (Math.random() - 0.5) * 20; // Smaller price changes
+      const priceChange = (Math.random() - 0.5) * 20;
       return {
         ...state,
         marketPrice: Math.max(
@@ -288,7 +313,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'UPDATE_PASSIVE_INCOME':
       return {
         ...state,
-        money: state.money + 1, // Always add exactly $1
+        money: state.money + 1,
       };
 
     case 'SELECT_SEAWEED_TYPE':
@@ -312,10 +337,16 @@ export default function SeaweedFarmer() {
   const [gameState, dispatch] = useReducer(gameReducer, {
     money: INITIAL_MONEY,
     seaweeds: [],
-    marketPrice: 30, // Starting at a lower, more realistic price
+    marketPrice: 30,
     eventMessage: '',
     passiveIncomeRate: 1,
-    selectedSeaweedType: 'EUCHEUMA'
+    selectedSeaweedType: 'EUCHEUMA',
+    harvestedCounts: {
+      EUCHEUMA: 0,
+      GRACILARIA: 0,
+      SARGASSUM: 0
+    },
+    gameWon: false
   });
 
   const getGrowthStage = useCallback((age: number) => {
@@ -353,7 +384,7 @@ export default function SeaweedFarmer() {
 
     const passiveIncomeInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => {
       clearInterval(gameInterval);
@@ -384,6 +415,24 @@ export default function SeaweedFarmer() {
                 <p>Market price affects harvest value</p>
               </TooltipContent>
             </Tooltip>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <Trophy className={`h-6 w-6 ${gameState.gameWon ? 'text-yellow-500' : 'text-gray-400'}`} />
+            <div className="flex space-x-4">
+              {Object.entries(WIN_CONDITION).map(([type, required]) => (
+                <div key={type} className="text-sm">
+                  <span className="font-medium">{SEAWEED_TYPES[type as keyof typeof SEAWEED_TYPES].name}:</span>
+                  <span className={gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES] >= required ? 'text-green-600' : ''}>
+                    {' '}{gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES]}/{required}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
