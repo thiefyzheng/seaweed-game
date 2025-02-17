@@ -4,6 +4,7 @@ import React, { useReducer, useEffect, useCallback } from 'react';
 import { AlertCircle, DollarSign, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { 
   Tooltip,
   TooltipContent,
@@ -263,12 +264,13 @@ export default function SeaweedFarmer() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
+        <Button
           onClick={() => dispatch({ type: 'PLANT_SEAWEED' })}
-          className="p-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          size="lg"
+          className="w-full bg-green-500 hover:bg-green-600"
         >
           Plant Seaweed (${PLANTING_COST})
-        </button>
+        </Button>
         
         <Card className="border shadow-sm">
           <CardContent className="p-6">
