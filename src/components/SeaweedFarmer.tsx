@@ -295,11 +295,11 @@ export default function SeaweedFarmer() {
             <TooltipTrigger asChild>
               <Button
                 onClick={() => dispatch({ type: 'SELECT_SEAWEED_TYPE', payload: type as keyof typeof SEAWEED_TYPES })}
-                className={`${
+                className={`${data.color} text-white w-full border-2 ${
                   gameState.selectedSeaweedType === type 
-                    ? 'ring-2 ring-blue-500' 
-                    : ''
-                } ${data.color} text-white w-full`}
+                    ? 'border-yellow-400 shadow-lg' 
+                    : 'border-transparent'
+                }`}
               >
                 {data.name} (${data.plantingCost})
               </Button>
@@ -324,13 +324,13 @@ export default function SeaweedFarmer() {
             <Tooltip key={seaweed.id}>
               <TooltipTrigger>
                 <div 
-                  className={`h-20 ${SEAWEED_TYPES[seaweed.type].color} rounded cursor-pointer transition-transform hover:scale-105`}
+                  className={`h-20 ${SEAWEED_TYPES[seaweed.type].color} rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot`}
                   onClick={() => dispatch({ 
                     type: 'HARVEST_SEAWEED', 
                     payload: seaweed.id 
                   })}
                 >
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
                     {SEAWEED_TYPES[seaweed.type].name}
                     <br />
                     {stage.name}
@@ -381,13 +381,13 @@ export default function SeaweedFarmer() {
 
       <style jsx global>{`
         @keyframes sway {
-          0% { transform: rotate(-2deg); }
-          50% { transform: rotate(2deg); }
-          100% { transform: rotate(-2deg); }
+          0% { transform: rotate(-1deg); }
+          50% { transform: rotate(1deg); }
+          100% { transform: rotate(-1deg); }
         }
         
-        [class*='bg-'] {
-          animation: sway 6s infinite ease-in-out;
+        .seaweed-plot {
+          animation: sway 5s infinite ease-in-out;
           position: relative;
         }
       `}</style>
