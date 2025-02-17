@@ -172,7 +172,7 @@ export default function SeaweedFarmer() {
     seaweeds: [],
     marketPrice: 100,
     eventMessage: '',
-    passiveIncomeRate: 1,
+    passiveIncomeRate: 10,
   });
 
   const getGrowthStage = useCallback((age: number) => {
