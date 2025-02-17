@@ -47,10 +47,10 @@ const MARKET_PRICE_RANGE = { MIN: 10, MAX: 100 };
 
 const GROWTH_STAGES = {
   SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.1 },
-  GROWING: { name: 'Growing', age: 5, multiplier: 0.5 },
-  MATURE: { name: 'Mature', age: 10, multiplier: 1.0 },
-  OPTIMAL: { name: 'Optimal', age: 15, multiplier: 1.5 },
-  OVERGROWN: { name: 'Overgrown', age: 20, multiplier: 0.3 }
+  GROWING: { name: 'Growing', age: 3, multiplier: 0.5 },
+  MATURE: { name: 'Mature', age: 6, multiplier: 1.0 },
+  OPTIMAL: { name: 'Optimal', age: 9, multiplier: 1.5 },
+  OVERGROWN: { name: 'Overgrown', age: 12, multiplier: 0.3 }
 };
 
 // Game events with more variety
@@ -59,7 +59,7 @@ const RANDOM_EVENTS = [
   {
     id: 'redTide',
     message: "🌊 Red tide alert! Some seaweed damaged!",
-    probability: 0.08,
+    probability: 0.04,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.filter((_, index: number) => index % 2 === 0)
@@ -68,7 +68,7 @@ const RANDOM_EVENTS = [
   {
     id: 'seaweedDisease',
     message: "🦠 Seaweed disease outbreak! Growth slowed!",
-    probability: 0.08,
+    probability: 0.04,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -80,7 +80,7 @@ const RANDOM_EVENTS = [
   {
     id: 'marketCrash',
     message: "📉 Market prices plummet!",
-    probability: 0.08,
+    probability: 0.04,
     effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
@@ -89,7 +89,7 @@ const RANDOM_EVENTS = [
   {
     id: 'storm',
     message: "🌊 Storm damages some seaweed!",
-    probability: 0.08,
+    probability: 0.04,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.filter(() => Math.random() > 0.3)
