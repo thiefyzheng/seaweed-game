@@ -330,7 +330,7 @@ export default function SeaweedFarmer() {
                     payload: seaweed.id 
                   })}
                 >
-                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
                     {SEAWEED_TYPES[seaweed.type].name}
                     <br />
                     {stage.name}
@@ -381,13 +381,14 @@ export default function SeaweedFarmer() {
 
       <style jsx global>{`
         @keyframes sway {
-          0% { transform: rotate(-5deg); }
-          50% { transform: rotate(5deg); }
-          100% { transform: rotate(-5deg); }
+          0% { transform: rotate(-2deg); }
+          50% { transform: rotate(2deg); }
+          100% { transform: rotate(-2deg); }
         }
         
         [class*='bg-'] {
-          animation: sway 4s infinite ease-in-out;
+          animation: sway 6s infinite ease-in-out;
+          position: relative;
         }
       `}</style>
     </div>
