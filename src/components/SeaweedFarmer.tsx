@@ -30,7 +30,7 @@ const RANDOM_EVENTS = [
   {
     id: 'redTide',
     message: "🌊 Red tide alert! Some seaweed damaged!",
-    probability: 0.3,
+    probability: 0.1,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.filter((_, index: number) => index % 2 === 0)
@@ -60,7 +60,7 @@ const RANDOM_EVENTS = [
   {
     id: 'marketCrash',
     message: "📉 Market prices plummet!",
-    probability: 0.2,
+    probability: 0.1,
     effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
