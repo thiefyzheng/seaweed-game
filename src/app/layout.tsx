@@ -17,9 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}>
         <TooltipProvider>
-          {children}
+          <main className="min-h-screen">
+            {children}
+          </main>
         </TooltipProvider>
       </body>
     </html>
