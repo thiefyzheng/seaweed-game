@@ -49,14 +49,15 @@ const SEAWEED_TYPES = {
   }
 } as const;
 
-const MARKET_PRICE_RANGE = { MIN: 10, MAX: 100 };
+const MARKET_PRICE_RANGE = { MIN: 5, MAX: 30 };
 
 const GROWTH_STAGES = {
-  SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.1 },
-  GROWING: { name: 'Growing', age: 2, multiplier: 0.5 }, // Faster growth
+  SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.2 },
+  GROWING: { name: 'Growing', age: 2, multiplier: 0.4 },
   MATURE: { name: 'Mature', age: 4, multiplier: 1.0 },
-  OPTIMAL: { name: 'Optimal', age: 6, multiplier: 1.5 },
-  OVERGROWN: { name: 'Overgrown', age: 8, multiplier: 0.3 }
+  OPTIMAL: { name: 'Optimal', age: 6, multiplier: 1.2 },
+  OVERGROWN: { name: 'Overgrown', age: 8, multiplier: 0.3 },
+  ROTTEN: { name: 'Rotten', age: 10, multiplier: -0.5 }
 };
 
 // Game events with more variety
@@ -289,12 +290,35 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'UPDATE_GROWTH':
+      const updatedSeaweeds = state.seaweeds.map(seaweed => ({
+        ...seaweed,
+        age: seaweed.age + 1
+      }));
+      
+      // Calculate losses from rotten seaweed
+      const rottenSeaweeds = updatedSeaweeds.filter(seaweed => {
+        const stage = Object.values(GROWTH_STAGES)
+          .reverse()
+          .find(stage => seaweed.age >= stage.age);
+        return stage?.name === 'Rotten';
+      });
+      
+      const rottenLoss = rottenSeaweeds.length > 0 
+        ? Math.round(state.marketPrice * 0.5 * rottenSeaweeds.length)
+        : 0;
+
+      if (rottenLoss > 0) {
+        return {
+          ...state,
+          seaweeds: updatedSeaweeds,
+          money: Math.max(0, state.money - rottenLoss),
+          eventMessage: `Lost $${rottenLoss} from rotten seaweed!`
+        };
+      }
+
       return {
         ...state,
-        seaweeds: state.seaweeds.map(seaweed => ({
-          ...seaweed,
-          age: seaweed.age + 1
-        }))
+        seaweeds: updatedSeaweeds
       };
 
     case 'UPDATE_MARKET':
@@ -340,7 +364,7 @@ export default function SeaweedFarmer() {
   const [gameState, dispatch] = useReducer(gameReducer, {
     money: INITIAL_MONEY,
     seaweeds: [],
-    marketPrice: 30,
+    marketPrice: 15,
     eventMessage: '',
     passiveIncomeRate: 1,
     selectedSeaweedType: 'EUCHEUMA',
