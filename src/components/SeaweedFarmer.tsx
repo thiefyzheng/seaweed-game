@@ -204,13 +204,13 @@ export default function SeaweedFarmer() {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">
+      <Card className="border shadow-sm">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
             🌱 Seaweed Farmer 🎮
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="grid grid-cols-2 gap-4 text-center">
             <div className="flex items-center justify-center space-x-2">
               <DollarSign className="text-green-600" />
@@ -270,20 +270,20 @@ export default function SeaweedFarmer() {
           Plant Seaweed (${PLANTING_COST})
         </button>
         
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border shadow-sm">
+          <CardContent className="p-6">
             <div className="flex items-center justify-center space-x-2">
-              <Info className="text-blue-500" />
-              <span>Harvest value varies by growth stage</span>
+              <Info className="h-4 w-4 text-blue-500" />
+              <span className="text-sm text-muted-foreground">Harvest value varies by growth stage</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {gameState.eventMessage && (
-        <Alert>
+        <Alert variant="default" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{gameState.eventMessage}</AlertDescription>
+          <AlertDescription className="text-sm">{gameState.eventMessage}</AlertDescription>
         </Alert>
       )}
 
