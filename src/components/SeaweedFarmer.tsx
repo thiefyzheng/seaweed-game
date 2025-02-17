@@ -91,7 +91,7 @@ const RANDOM_EVENTS = [
     probability: 0.05,
     effect: (state: GameState) => ({
       ...state,
-      seaweeds: state.seaweeds.filter(seaweed => Math.random() > 0.3)
+      seaweeds: state.seaweeds.filter(() => Math.random() > 0.3)
     })
   },
 
