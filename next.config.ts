@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
-  basePath: '/seaweed-game',
+  // Vercel handles optimization automatically
   images: {
-    unoptimized: true,
+    domains: ['vercel.com'],
   },
 };
 
