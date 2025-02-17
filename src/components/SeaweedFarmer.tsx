@@ -73,6 +73,7 @@ interface GameState {
   seaweeds: Array<{
     id: number;
     age: number;
+    marketPriceAtPlanting: number;
   }>;
   marketPrice: number;
   eventMessage: string;
@@ -103,7 +104,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         money: state.money - PLANTING_COST,
         seaweeds: [...state.seaweeds, {
           id: Date.now(),
-          age: 0
+          age: 0,
+          marketPriceAtPlanting: state.marketPrice
         }]
       };
 
@@ -112,11 +114,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       if (!seaweed) return state;
       
       const stage = Object.values(GROWTH_STAGES)
+        .reverse()
         .find(stage => seaweed.age >= stage.age);
       
       if (!stage) return state;
       
-      const value = Math.round(state.marketPrice * stage.multiplier);
+      const value = Math.round(seaweed.marketPriceAtPlanting * stage.multiplier);
 
       return {
         ...state,
@@ -210,7 +213,7 @@ export default function SeaweedFarmer() {
 
     const passiveIncomeInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 1000);
+    }, 10000);
 
     return () => {
       clearInterval(gameInterval);
@@ -250,7 +253,7 @@ export default function SeaweedFarmer() {
           const stage = getGrowthStage(seaweed.age);
           if (!stage) return null;
           
-          const value = Math.round(gameState.marketPrice * stage.multiplier);
+          const value = Math.round(seaweed.marketPriceAtPlanting * stage.multiplier);
           
           return (
               <Tooltip key={seaweed.id}>
