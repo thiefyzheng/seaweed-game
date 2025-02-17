@@ -12,37 +12,38 @@ import {
 } from "@/components/ui/tooltip";
 
 // Game constants
-const INITIAL_MONEY = 1000;
+const INITIAL_MONEY = 50;
 const UPDATE_INTERVAL = 2000;
+const MARKET_UPDATE_CHANCE = 0.6; // Increased market update frequency
 
 const SEAWEED_TYPES = {
   EUCHEUMA: {
     name: 'Eucheuma',
     description: 'Cultivated for carrageenan production',
-    basePrice: 100,
-    plantingCost: 15,
+    basePrice: 20,
+    plantingCost: 5,
     color: 'bg-red-400',
     specialEffect: 'Faster growth in warm waters'
   },
   GRACILARIA: {
     name: 'Gracilaria',
     description: 'High-quality agar source',
-    basePrice: 150,
-    plantingCost: 20,
+    basePrice: 30,
+    plantingCost: 8,
     color: 'bg-purple-400',
     specialEffect: 'Thrives in shrimp ponds'
   },
   SARGASSUM: {
     name: 'Sargassum',
     description: 'Traditional medicinal uses',
-    basePrice: 200,
-    plantingCost: 25,
+    basePrice: 40,
+    plantingCost: 12,
     color: 'bg-green-400',
     specialEffect: 'Valuable for health benefits'
   }
 } as const;
 
-const MARKET_PRICE_RANGE = { MIN: 50, MAX: 200 };
+const MARKET_PRICE_RANGE = { MIN: 10, MAX: 100 };
 
 const GROWTH_STAGES = {
   SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.1 },
@@ -58,7 +59,7 @@ const RANDOM_EVENTS = [
   {
     id: 'redTide',
     message: "🌊 Red tide alert! Some seaweed damaged!",
-    probability: 0.05,
+    probability: 0.08,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.filter((_, index: number) => index % 2 === 0)
@@ -67,7 +68,7 @@ const RANDOM_EVENTS = [
   {
     id: 'seaweedDisease',
     message: "🦠 Seaweed disease outbreak! Growth slowed!",
-    probability: 0.05,
+    probability: 0.08,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -79,7 +80,7 @@ const RANDOM_EVENTS = [
   {
     id: 'marketCrash',
     message: "📉 Market prices plummet!",
-    probability: 0.05,
+    probability: 0.08,
     effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
@@ -88,7 +89,7 @@ const RANDOM_EVENTS = [
   {
     id: 'storm',
     message: "🌊 Storm damages some seaweed!",
-    probability: 0.05,
+    probability: 0.08,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.filter(() => Math.random() > 0.3)
@@ -99,7 +100,7 @@ const RANDOM_EVENTS = [
   {
     id: 'perfectConditions',
     message: "🌡️ Perfect growing conditions!",
-    probability: 0.1,
+    probability: 0.15,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -111,7 +112,7 @@ const RANDOM_EVENTS = [
   {
     id: 'marketBoom',
     message: "📈 Market demand surges!",
-    probability: 0.1,
+    probability: 0.15,
     effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 1.5)
@@ -120,7 +121,7 @@ const RANDOM_EVENTS = [
   {
     id: 'nutrientBloom',
     message: "🌿 Nutrient bloom accelerates growth!",
-    probability: 0.1,
+    probability: 0.15,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -132,7 +133,7 @@ const RANDOM_EVENTS = [
   {
     id: 'researchBreakthrough',
     message: "🔬 Research breakthrough! All seaweed more valuable!",
-    probability: 0.08,
+    probability: 0.12,
     effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 2)
@@ -141,7 +142,7 @@ const RANDOM_EVENTS = [
   {
     id: 'carrageenanDemand',
     message: "🏭 Carrageenan demand spikes! Eucheuma thrives!",
-    probability: 0.08,
+    probability: 0.12,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -153,7 +154,7 @@ const RANDOM_EVENTS = [
   {
     id: 'agarResearch',
     message: "🧪 Agar research funding! Gracilaria flourishes!",
-    probability: 0.08,
+    probability: 0.12,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -165,7 +166,7 @@ const RANDOM_EVENTS = [
   {
     id: 'medicinalDiscovery',
     message: "💊 New medicinal properties found! Sargassum in demand!",
-    probability: 0.08,
+    probability: 0.12,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.map(seaweed => ({
@@ -252,7 +253,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'UPDATE_MARKET':
-      const priceChange = (Math.random() - 0.5) * 40;
+      const priceChange = (Math.random() - 0.5) * 20; // Smaller price changes
       return {
         ...state,
         marketPrice: Math.max(
@@ -294,7 +295,7 @@ export default function SeaweedFarmer() {
   const [gameState, dispatch] = useReducer(gameReducer, {
     money: INITIAL_MONEY,
     seaweeds: [],
-    marketPrice: 100,
+    marketPrice: 30, // Starting at a lower, more realistic price
     eventMessage: '',
     passiveIncomeRate: 1,
     selectedSeaweedType: 'EUCHEUMA'
@@ -329,13 +330,13 @@ export default function SeaweedFarmer() {
   useEffect(() => {
     const gameInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_GROWTH' });
-      if (Math.random() < 0.4) dispatch({ type: 'UPDATE_MARKET' });
+      if (Math.random() < MARKET_UPDATE_CHANCE) dispatch({ type: 'UPDATE_MARKET' });
       handleRandomEvent();
     }, UPDATE_INTERVAL);
 
     const passiveIncomeInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 1000);
+    }, 10000); // Changed to 10 seconds
 
     return () => {
       clearInterval(gameInterval);
