@@ -54,22 +54,55 @@ const GROWTH_STAGES = {
 
 // Game events with more variety
 const RANDOM_EVENTS = [
+  // Negative events (lower probability)
   {
     id: 'redTide',
     message: "🌊 Red tide alert! Some seaweed damaged!",
-    probability: 0.1,
+    probability: 0.05,
     effect: (state: GameState) => ({
       ...state,
       seaweeds: state.seaweeds.filter((_, index: number) => index % 2 === 0)
     })
   },
   {
-    id: 'perfectConditions',
-    message: "🌡️ Perfect growing conditions!",
-    probability: 0.3,
+    id: 'seaweedDisease',
+    message: "🦠 Seaweed disease outbreak! Growth slowed!",
+    probability: 0.05,
     effect: (state: GameState) => ({
       ...state,
-      seaweeds: state.seaweeds.map((seaweed) => ({
+      seaweeds: state.seaweeds.map(seaweed => ({
+        ...seaweed,
+        age: Math.max(0, seaweed.age - 2)
+      }))
+    })
+  },
+  {
+    id: 'marketCrash',
+    message: "📉 Market prices plummet!",
+    probability: 0.05,
+    effect: (state: GameState) => ({
+      ...state,
+      marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
+    })
+  },
+  {
+    id: 'storm',
+    message: "🌊 Storm damages some seaweed!",
+    probability: 0.05,
+    effect: (state: GameState) => ({
+      ...state,
+      seaweeds: state.seaweeds.filter(seaweed => Math.random() > 0.3)
+    })
+  },
+
+  // Positive events (higher probability)
+  {
+    id: 'perfectConditions',
+    message: "🌡️ Perfect growing conditions!",
+    probability: 0.1,
+    effect: (state: GameState) => ({
+      ...state,
+      seaweeds: state.seaweeds.map(seaweed => ({
         ...seaweed,
         age: seaweed.age + 2
       }))
@@ -78,19 +111,67 @@ const RANDOM_EVENTS = [
   {
     id: 'marketBoom',
     message: "📈 Market demand surges!",
-    probability: 0.2,
+    probability: 0.1,
     effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 1.5)
     })
   },
   {
-    id: 'marketCrash',
-    message: "📉 Market prices plummet!",
+    id: 'nutrientBloom',
+    message: "🌿 Nutrient bloom accelerates growth!",
     probability: 0.1,
     effect: (state: GameState) => ({
       ...state,
-      marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
+      seaweeds: state.seaweeds.map(seaweed => ({
+        ...seaweed,
+        age: seaweed.age + 3
+      }))
+    })
+  },
+  {
+    id: 'researchBreakthrough',
+    message: "🔬 Research breakthrough! All seaweed more valuable!",
+    probability: 0.08,
+    effect: (state: GameState) => ({
+      ...state,
+      marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 2)
+    })
+  },
+  {
+    id: 'carrageenanDemand',
+    message: "🏭 Carrageenan demand spikes! Eucheuma thrives!",
+    probability: 0.08,
+    effect: (state: GameState) => ({
+      ...state,
+      seaweeds: state.seaweeds.map(seaweed => ({
+        ...seaweed,
+        age: seaweed.type === 'EUCHEUMA' ? seaweed.age + 4 : seaweed.age
+      }))
+    })
+  },
+  {
+    id: 'agarResearch',
+    message: "🧪 Agar research funding! Gracilaria flourishes!",
+    probability: 0.08,
+    effect: (state: GameState) => ({
+      ...state,
+      seaweeds: state.seaweeds.map(seaweed => ({
+        ...seaweed,
+        age: seaweed.type === 'GRACILARIA' ? seaweed.age + 4 : seaweed.age
+      }))
+    })
+  },
+  {
+    id: 'medicinalDiscovery',
+    message: "💊 New medicinal properties found! Sargassum in demand!",
+    probability: 0.08,
+    effect: (state: GameState) => ({
+      ...state,
+      seaweeds: state.seaweeds.map(seaweed => ({
+        ...seaweed,
+        age: seaweed.type === 'SARGASSUM' ? seaweed.age + 4 : seaweed.age
+      }))
     })
   }
 ];
