@@ -13,16 +13,43 @@ import {
 
 // Game constants
 const INITIAL_MONEY = 1000;
-const PLANTING_COST = 10;
-const MARKET_PRICE_RANGE = { MIN: 50, MAX: 200 };
 const UPDATE_INTERVAL = 2000;
 
+const SEAWEED_TYPES = {
+  EUCHEUMA: {
+    name: 'Eucheuma',
+    description: 'Cultivated for carrageenan production',
+    basePrice: 100,
+    plantingCost: 15,
+    color: 'bg-red-400',
+    specialEffect: 'Faster growth in warm waters'
+  },
+  GRACILARIA: {
+    name: 'Gracilaria',
+    description: 'High-quality agar source',
+    basePrice: 150,
+    plantingCost: 20,
+    color: 'bg-purple-400',
+    specialEffect: 'Thrives in shrimp ponds'
+  },
+  SARGASSUM: {
+    name: 'Sargassum',
+    description: 'Traditional medicinal uses',
+    basePrice: 200,
+    plantingCost: 25,
+    color: 'bg-green-400',
+    specialEffect: 'Valuable for health benefits'
+  }
+} as const;
+
+const MARKET_PRICE_RANGE = { MIN: 50, MAX: 200 };
+
 const GROWTH_STAGES = {
-  SEEDLING: { name: 'Seedling', age: 0, color: 'bg-green-200', multiplier: 0.1 },
-  GROWING: { name: 'Growing', age: 5, color: 'bg-green-400', multiplier: 0.5 },
-  MATURE: { name: 'Mature', age: 10, color: 'bg-green-600', multiplier: 1.0 },
-  OPTIMAL: { name: 'Optimal', age: 15, color: 'bg-green-700', multiplier: 1.5 },
-  OVERGROWN: { name: 'Overgrown', age: 20, color: 'bg-yellow-600', multiplier: 0.3 }
+  SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.1 },
+  GROWING: { name: 'Growing', age: 5, multiplier: 0.5 },
+  MATURE: { name: 'Mature', age: 10, multiplier: 1.0 },
+  OPTIMAL: { name: 'Optimal', age: 15, multiplier: 1.5 },
+  OVERGROWN: { name: 'Overgrown', age: 20, multiplier: 0.3 }
 };
 
 // Game events with more variety
@@ -74,10 +101,12 @@ interface GameState {
     id: number;
     age: number;
     marketPriceAtPlanting: number;
+    type: keyof typeof SEAWEED_TYPES;
   }>;
   marketPrice: number;
   eventMessage: string;
   passiveIncomeRate: number;
+  selectedSeaweedType: keyof typeof SEAWEED_TYPES;
 }
 
 type GameAction = 
@@ -87,13 +116,15 @@ type GameAction =
   | { type: 'UPDATE_MARKET' }
   | { type: 'APPLY_EVENT'; payload: GameState; message: string }
   | { type: 'CLEAR_MESSAGE' }
-  | { type: 'UPDATE_PASSIVE_INCOME' };
+  | { type: 'UPDATE_PASSIVE_INCOME' }
+  | { type: 'SELECT_SEAWEED_TYPE'; payload: keyof typeof SEAWEED_TYPES };
 
 // Reducer for better state management
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'PLANT_SEAWEED':
-      if (state.money < PLANTING_COST) {
+      const plantingCost = SEAWEED_TYPES[state.selectedSeaweedType].plantingCost;
+      if (state.money < plantingCost) {
         return {
           ...state,
           eventMessage: "Not enough money to plant seaweed!"
@@ -101,10 +132,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       }
       return {
         ...state,
-        money: state.money - PLANTING_COST,
+        money: state.money - plantingCost,
         seaweeds: [...state.seaweeds, {
           id: Date.now(),
           age: 0,
+          type: state.selectedSeaweedType,
           marketPriceAtPlanting: state.marketPrice
         }]
       };
@@ -119,13 +151,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       if (!stage) return state;
       
-      const value = Math.round(seaweed.marketPriceAtPlanting * stage.multiplier);
+      const baseValue = SEAWEED_TYPES[seaweed.type].basePrice;
+      const value = Math.round(baseValue * stage.multiplier);
 
       return {
         ...state,
         money: state.money + value,
         seaweeds: state.seaweeds.filter(s => s.id !== action.payload),
-        eventMessage: `Harvested seaweed for $${value}!`
+        eventMessage: `Harvested ${SEAWEED_TYPES[seaweed.type].name} for $${value}!`
       };
 
     case 'UPDATE_GROWTH':
@@ -152,10 +185,17 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...action.payload,
         eventMessage: action.message
       };
+
     case 'UPDATE_PASSIVE_INCOME':
       return {
         ...state,
         money: state.money + state.passiveIncomeRate,
+      };
+
+    case 'SELECT_SEAWEED_TYPE':
+      return {
+        ...state,
+        selectedSeaweedType: action.payload
       };
 
     case 'CLEAR_MESSAGE':
@@ -176,6 +216,7 @@ export default function SeaweedFarmer() {
     marketPrice: 100,
     eventMessage: '',
     passiveIncomeRate: 1,
+    selectedSeaweedType: 'EUCHEUMA'
   });
 
   const getGrowthStage = useCallback((age: number) => {
@@ -248,35 +289,64 @@ export default function SeaweedFarmer() {
         </CardContent>
       </Card>
 
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        {Object.entries(SEAWEED_TYPES).map(([type, data]) => (
+          <Tooltip key={type}>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => dispatch({ type: 'SELECT_SEAWEED_TYPE', payload: type as keyof typeof SEAWEED_TYPES })}
+                className={`${
+                  gameState.selectedSeaweedType === type 
+                    ? 'ring-2 ring-blue-500' 
+                    : ''
+                } ${data.color} text-white w-full`}
+              >
+                {data.name} (${data.plantingCost})
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{data.description}</p>
+              <p>{data.specialEffect}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
         {gameState.seaweeds.map((seaweed) => {
           const stage = getGrowthStage(seaweed.age);
           if (!stage) return null;
           
-          const value = Math.round(seaweed.marketPriceAtPlanting * stage.multiplier);
+          const baseValue = SEAWEED_TYPES[seaweed.type].basePrice;
+          const value = Math.round(baseValue * stage.multiplier);
           
           return (
-              <Tooltip key={seaweed.id}>
-                <TooltipTrigger>
-                  <div 
-                    className={`h-20 ${stage.color} rounded cursor-pointer transition-transform hover:scale-105`}
-                    onClick={() => dispatch({ 
-                      type: 'HARVEST_SEAWEED', 
-                      payload: seaweed.id 
-                    })}
-                  >
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
-                      {stage.name}
-                      <br />
-                      ${value}
-                    </div>
+            <Tooltip key={seaweed.id}>
+              <TooltipTrigger>
+                <div 
+                  className={`h-20 ${SEAWEED_TYPES[seaweed.type].color} rounded cursor-pointer transition-transform hover:scale-105`}
+                  onClick={() => dispatch({ 
+                    type: 'HARVEST_SEAWEED', 
+                    payload: seaweed.id 
+                  })}
+                >
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
+                    {SEAWEED_TYPES[seaweed.type].name}
+                    <br />
+                    {stage.name}
+                    <br />
+                    ${value}
                   </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Age: {seaweed.age} days</p>
-                  <p>Click to harvest</p>
-                </TooltipContent>
-              </Tooltip>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Type: {SEAWEED_TYPES[seaweed.type].name}</p>
+                <p>Age: {seaweed.age} days</p>
+                <p>Stage: {stage.name}</p>
+                <p>Value: ${value}</p>
+                <p>Click to harvest</p>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
@@ -287,14 +357,16 @@ export default function SeaweedFarmer() {
           size="lg"
           className="w-full bg-green-500 hover:bg-green-600"
         >
-          Plant Seaweed (${PLANTING_COST})
+          Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} (${SEAWEED_TYPES[gameState.selectedSeaweedType].plantingCost})
         </Button>
         
         <Card className="border shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-center space-x-2">
               <Info className="h-4 w-4 text-blue-500" />
-              <span className="text-sm text-muted-foreground">Harvest value varies by growth stage</span>
+              <span className="text-sm text-muted-foreground">
+                {SEAWEED_TYPES[gameState.selectedSeaweedType].description}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -314,7 +386,7 @@ export default function SeaweedFarmer() {
           100% { transform: rotate(-5deg); }
         }
         
-        [class*='bg-green-'] {
+        [class*='bg-'] {
           animation: sway 4s infinite ease-in-out;
         }
       `}</style>
