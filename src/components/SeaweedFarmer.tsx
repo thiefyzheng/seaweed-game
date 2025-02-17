@@ -76,6 +76,7 @@ interface GameState {
   }>;
   marketPrice: number;
   eventMessage: string;
+  passiveIncomeRate: number;
 }
 
 type GameAction = 
@@ -84,7 +85,8 @@ type GameAction =
   | { type: 'UPDATE_GROWTH' }
   | { type: 'UPDATE_MARKET' }
   | { type: 'APPLY_EVENT'; payload: GameState; message: string }
-  | { type: 'CLEAR_MESSAGE' };
+  | { type: 'CLEAR_MESSAGE' }
+  | { type: 'UPDATE_PASSIVE_INCOME' };
 
 // Reducer for better state management
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -147,6 +149,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...action.payload,
         eventMessage: action.message
       };
+    case 'UPDATE_PASSIVE_INCOME':
+      return {
+        ...state,
+        money: state.money + state.passiveIncomeRate,
+      };
 
     case 'CLEAR_MESSAGE':
       return {
@@ -164,7 +171,8 @@ export default function SeaweedFarmer() {
     money: INITIAL_MONEY,
     seaweeds: [],
     marketPrice: 100,
-    eventMessage: ''
+    eventMessage: '',
+    passiveIncomeRate: 1,
   });
 
   const getGrowthStage = useCallback((age: number) => {
@@ -200,7 +208,14 @@ export default function SeaweedFarmer() {
       handleRandomEvent();
     }, UPDATE_INTERVAL);
 
-    return () => clearInterval(gameInterval);
+    const passiveIncomeInterval = setInterval(() => {
+      dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
+    }, 5000);
+
+    return () => {
+      clearInterval(gameInterval);
+      clearInterval(passiveIncomeInterval);
+    };
   }, [handleRandomEvent]);
 
   return (
@@ -217,15 +232,15 @@ export default function SeaweedFarmer() {
               <DollarSign className="text-green-600" />
               <span>${gameState.money}</span>
             </div>
-              <Tooltip>
-                <TooltipTrigger className="flex items-center justify-center space-x-2">
-                  <Info className="text-blue-600" />
-                  <span>Market Price: ${gameState.marketPrice}/kg</span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Market price affects harvest value</p>
-                </TooltipContent>
-              </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center justify-center space-x-2">
+                <Info className="text-blue-600" />
+                <span>Market Price: ${gameState.marketPrice}/kg</span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Market price affects harvest value</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </CardContent>
       </Card>
