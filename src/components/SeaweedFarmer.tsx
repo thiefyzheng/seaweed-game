@@ -13,7 +13,7 @@ import {
 
 // Game constants
 const INITIAL_MONEY = 1000;
-const PLANTING_COST = 50;
+const PLANTING_COST = 10;
 const MARKET_PRICE_RANGE = { MIN: 50, MAX: 200 };
 const UPDATE_INTERVAL = 2000;
 
@@ -210,13 +210,13 @@ export default function SeaweedFarmer() {
 
     const passiveIncomeInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 5000);
+    }, 1000);
 
     return () => {
       clearInterval(gameInterval);
       clearInterval(passiveIncomeInterval);
     };
-  }, [handleRandomEvent]);
+  }, [handleRandomEvent, gameState.passiveIncomeRate]);
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
