@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 
 // Game constants
-const INITIAL_MONEY = 50;
+const INITIAL_MONEY = 20;
 const UPDATE_INTERVAL = 1000; // Faster updates for shorter game
 const MARKET_UPDATE_CHANCE = 0.6;
 
@@ -267,9 +267,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       // Use current market price and seaweed type multiplier for value
       const value = Math.round(state.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
 
+      // Only count Mature or Optimal harvests
       const newCounts = {
         ...state.harvestedCounts,
-        [seaweed.type]: state.harvestedCounts[seaweed.type] + 1
+        [seaweed.type]: stage.name === 'Mature' || stage.name === 'Optimal' 
+          ? state.harvestedCounts[seaweed.type] + 1 
+          : state.harvestedCounts[seaweed.type]
       };
 
       const gameWon = !state.gameWon && checkWinCondition(newCounts);
@@ -491,6 +494,7 @@ export default function SeaweedFarmer() {
                 <p>Age: {seaweed.age} days</p>
                 <p>Stage: {stage.name}</p>
                 <p>Value: ${value}</p>
+                <p>{stage.name === 'Mature' || stage.name === 'Optimal' ? '✨ Will count towards goal!' : 'Not ready to count yet'}</p>
                 <p>Click to harvest</p>
               </TooltipContent>
             </Tooltip>
