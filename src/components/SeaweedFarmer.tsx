@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -31,18 +30,18 @@ const RANDOM_EVENTS = [
     id: 'redTide',
     message: "🌊 Red tide alert! Some seaweed damaged!",
     probability: 0.3,
-    effect: (state: any) => ({
+    effect: (state: GameState) => ({
       ...state,
-      seaweeds: state.seaweeds.filter((_: any, index: number) => index % 2 === 0)
+      seaweeds: state.seaweeds.filter((_, index: number) => index % 2 === 0)
     })
   },
   {
     id: 'perfectConditions',
     message: "🌡️ Perfect growing conditions!",
     probability: 0.3,
-    effect: (state: any) => ({
+    effect: (state: GameState) => ({
       ...state,
-      seaweeds: state.seaweeds.map((seaweed: any) => ({
+      seaweeds: state.seaweeds.map((seaweed) => ({
         ...seaweed,
         age: seaweed.age + 2
       }))
@@ -52,7 +51,7 @@ const RANDOM_EVENTS = [
     id: 'marketBoom',
     message: "📈 Market demand surges!",
     probability: 0.2,
-    effect: (state: any) => ({
+    effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 1.5)
     })
@@ -61,7 +60,7 @@ const RANDOM_EVENTS = [
     id: 'marketCrash',
     message: "📉 Market prices plummet!",
     probability: 0.2,
-    effect: (state: any) => ({
+    effect: (state: GameState) => ({
       ...state,
       marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
     })
