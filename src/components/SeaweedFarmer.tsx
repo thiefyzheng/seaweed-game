@@ -174,6 +174,23 @@ const RANDOM_EVENTS = [
         age: seaweed.type === 'SARGASSUM' ? seaweed.age + 4 : seaweed.age
       }))
     })
+  },
+  {
+    id: 'wildSeaweed',
+    message: "🌱 Wild seaweed discovered!",
+    probability: 0.1,
+    effect: (state: GameState) => {
+      const randomType = Object.keys(SEAWEED_TYPES)[Math.floor(Math.random() * Object.keys(SEAWEED_TYPES).length)] as keyof typeof SEAWEED_TYPES;
+      return {
+        ...state,
+        seaweeds: [...state.seaweeds, {
+          id: Date.now(),
+          age: 0,
+          type: randomType,
+          marketPriceAtPlanting: state.marketPrice
+        }]
+      };
+    }
   }
 ];
 
@@ -233,8 +250,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       if (!stage) return state;
       
-      const baseValue = SEAWEED_TYPES[seaweed.type].basePrice;
-      const value = Math.round(baseValue * stage.multiplier);
+      // Use current market price and seaweed type multiplier for value
+      const value = Math.round(state.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
 
       return {
         ...state,
@@ -271,7 +288,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'UPDATE_PASSIVE_INCOME':
       return {
         ...state,
-        money: state.money + state.passiveIncomeRate,
+        money: state.money + 1, // Always add exactly $1
       };
 
     case 'SELECT_SEAWEED_TYPE':
@@ -336,13 +353,13 @@ export default function SeaweedFarmer() {
 
     const passiveIncomeInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 10000); // Changed to 10 seconds
+    }, 10000); // 10 seconds
 
     return () => {
       clearInterval(gameInterval);
       clearInterval(passiveIncomeInterval);
     };
-  }, [handleRandomEvent, gameState.passiveIncomeRate]);
+  }, [handleRandomEvent]);
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
@@ -399,8 +416,7 @@ export default function SeaweedFarmer() {
           const stage = getGrowthStage(seaweed.age);
           if (!stage) return null;
           
-          const baseValue = SEAWEED_TYPES[seaweed.type].basePrice;
-          const value = Math.round(baseValue * stage.multiplier);
+          const value = Math.round(gameState.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
           
           return (
             <Tooltip key={seaweed.id}>
