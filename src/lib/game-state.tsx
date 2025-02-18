@@ -1,4 +1,4 @@
-import React, { useReducer, createContext } from 'react';
+import { useReducer, createContext, Dispatch } from 'react';
 
 interface GameState {
   money: number;
@@ -55,7 +55,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
   }
 };
 
-export const GameStateContext = createContext<any>(null);
+interface GameStateContextType {
+  gameState: GameState;
+  dispatch: Dispatch<GameAction>;
+}
+
+export const GameStateContext = createContext<GameStateContextType | null>(null);
 
 export const useGameState = (initialState: GameState) => {
   const [gameState, dispatch] = useReducer(gameReducer, initialState);
