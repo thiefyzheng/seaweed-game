@@ -5,11 +5,13 @@ import { AlertCircle, DollarSign, Info, Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Quiz from './Quiz';
+import questions from '../lib/questions';
 
 // Game constants
 const INITIAL_MONEY = 20;
@@ -217,7 +219,7 @@ interface GameState {
   gameWon: boolean;
 }
 
-type GameAction = 
+type GameAction =
   | { type: 'PLANT_SEAWEED' }
   | { type: 'HARVEST_SEAWEED'; payload: number }
   | { type: 'UPDATE_GROWTH' }
@@ -225,10 +227,12 @@ type GameAction =
   | { type: 'APPLY_EVENT'; payload: GameState; message: string }
   | { type: 'CLEAR_MESSAGE' }
   | { type: 'UPDATE_PASSIVE_INCOME' }
-  | { type: 'SELECT_SEAWEED_TYPE'; payload: keyof typeof SEAWEED_TYPES };
+  | { type: 'SELECT_SEAWEED_TYPE'; payload: keyof typeof SEAWEED_TYPES }
+  | { type: 'CORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'money' } }
+  | { type: 'INCORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'money' } };
 
 const checkWinCondition = (counts: Record<keyof typeof SEAWEED_TYPES, number>): boolean => {
-  return Object.entries(WIN_CONDITION).every(([type, required]) => 
+  return Object.entries(WIN_CONDITION).every(([type, required]) =>
     counts[type as keyof typeof SEAWEED_TYPES] >= required
   );
 };
@@ -258,21 +262,21 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'HARVEST_SEAWEED':
       const seaweed = state.seaweeds.find(s => s.id === action.payload);
       if (!seaweed) return state;
-      
+
       const stage = Object.values(GROWTH_STAGES)
         .reverse()
         .find(stage => seaweed.age >= stage.age);
-      
+
       if (!stage) return state;
-      
+
       // Use current market price and seaweed type multiplier for value
       const value = Math.round(state.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
 
       // Only count Mature or Optimal harvests
       const newCounts = {
         ...state.harvestedCounts,
-        [seaweed.type]: stage.name === 'Mature' || stage.name === 'Optimal' 
-          ? state.harvestedCounts[seaweed.type] + 1 
+        [seaweed.type]: stage.name === 'Mature' || stage.name === 'Optimal'
+          ? state.harvestedCounts[seaweed.type] + 1
           : state.harvestedCounts[seaweed.type]
       };
 
@@ -284,8 +288,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         seaweeds: state.seaweeds.filter(s => s.id !== action.payload),
         harvestedCounts: newCounts,
         gameWon,
-        eventMessage: gameWon 
-          ? "🎉 Congratulations! You've mastered seaweed farming!" 
+        eventMessage: gameWon
+          ? "🎉 Congratulations! You've mastered seaweed farming!"
           : `Harvested ${SEAWEED_TYPES[seaweed.type].name} for $${value}!`
       };
 
@@ -294,7 +298,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...seaweed,
         age: seaweed.age + 1
       }));
-      
+
       // Calculate losses from rotten seaweed
       const rottenSeaweeds = updatedSeaweeds.filter(seaweed => {
         const stage = Object.values(GROWTH_STAGES)
@@ -302,8 +306,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           .find(stage => seaweed.age >= stage.age);
         return stage?.name === 'Rotten';
       });
-      
-      const rottenLoss = rottenSeaweeds.length > 0 
+
+      const rottenLoss = rottenSeaweeds.length > 0
         ? Math.round(state.marketPrice * 0.5 * rottenSeaweeds.length)
         : 0;
 
@@ -348,6 +352,35 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         selectedSeaweedType: action.payload
       };
+    case 'CORRECT_ANSWER':
+      if (action.payload.type === 'money') {
+        return {
+          ...state,
+          money: state.money + action.payload.reward,
+        };
+      } else {
+        return {
+          ...state,
+          seaweeds: [...state.seaweeds, {
+            id: Date.now(),
+            age: 0,
+            type: 'EUCHEUMA', // Default seaweed type for now
+            marketPriceAtPlanting: state.marketPrice
+          }]
+        };
+      }
+    case 'INCORRECT_ANSWER':
+      if (action.payload.type === 'money') {
+        return {
+          ...state,
+          money: Math.max(0, state.money - action.payload.reward),
+        };
+      } else {
+        return {
+          ...state,
+          seaweeds: state.seaweeds.slice(0, -1),
+        };
+      }
 
     case 'CLEAR_MESSAGE':
       return {
@@ -386,12 +419,12 @@ export default function SeaweedFarmer() {
     const applicableEvents = RANDOM_EVENTS.filter(
       event => Math.random() < event.probability
     );
-    
+
     if (applicableEvents.length > 0) {
       const event = applicableEvents[
         Math.floor(Math.random() * applicableEvents.length)
       ];
-      
+
       dispatch({
         type: 'APPLY_EVENT',
         payload: event.effect(gameState),
@@ -418,6 +451,14 @@ export default function SeaweedFarmer() {
       clearInterval(passiveIncomeInterval);
     };
   }, [handleRandomEvent]);
+
+  const handleCorrectAnswer = useCallback((reward: number, type: 'seaweed' | 'money') => {
+    dispatch({ type: 'CORRECT_ANSWER', payload: { reward, type } });
+  }, []);
+
+  const handleIncorrectAnswer = useCallback((reward: number, type: 'seaweed' | 'money') => {
+    dispatch({ type: 'INCORRECT_ANSWER', payload: { reward, type } });
+  }, []);
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
@@ -471,8 +512,8 @@ export default function SeaweedFarmer() {
               <Button
                 onClick={() => dispatch({ type: 'SELECT_SEAWEED_TYPE', payload: type as keyof typeof SEAWEED_TYPES })}
                 className={`${data.color} text-white w-full border-2 ${
-                  gameState.selectedSeaweedType === type 
-                    ? 'border-yellow-400 shadow-lg' 
+                  gameState.selectedSeaweedType === type
+                    ? 'border-yellow-400 shadow-lg'
                     : 'border-transparent'
                 }`}
               >
@@ -491,17 +532,17 @@ export default function SeaweedFarmer() {
         {gameState.seaweeds.map((seaweed) => {
           const stage = getGrowthStage(seaweed.age);
           if (!stage) return null;
-          
+
           const value = Math.round(gameState.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
-          
+
           return (
             <Tooltip key={seaweed.id}>
               <TooltipTrigger>
-                <div 
+                <div
                   className={`h-20 ${SEAWEED_TYPES[seaweed.type].color} rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot`}
-                  onClick={() => dispatch({ 
-                    type: 'HARVEST_SEAWEED', 
-                    payload: seaweed.id 
+                  onClick={() => dispatch({
+                    type: 'HARVEST_SEAWEED',
+                    payload: seaweed.id
                   })}
                 >
                   <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
@@ -534,7 +575,7 @@ export default function SeaweedFarmer() {
         >
           Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} (${SEAWEED_TYPES[gameState.selectedSeaweedType].plantingCost})
         </Button>
-        
+
         <Card className="border shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-center space-x-2">
@@ -546,6 +587,12 @@ export default function SeaweedFarmer() {
           </CardContent>
         </Card>
       </div>
+
+      <Quiz
+        questions={questions}
+        onCorrectAnswer={handleCorrectAnswer}
+        onIncorrectAnswer={handleIncorrectAnswer}
+      />
 
       {gameState.eventMessage && (
         <Alert variant="default" className="border shadow-sm">
@@ -560,7 +607,7 @@ export default function SeaweedFarmer() {
           50% { transform: rotate(1deg); }
           100% { transform: rotate(-1deg); }
         }
-        
+
         .seaweed-plot {
           animation: sway 5s infinite ease-in-out;
           position: relative;
