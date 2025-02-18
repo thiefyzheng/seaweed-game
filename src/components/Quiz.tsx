@@ -23,7 +23,6 @@ const Quiz: React.FC<QuizProps> = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>('');
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [explanation, setExplanation] = useState<string>('');
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -39,12 +38,10 @@ const Quiz: React.FC<QuizProps> = ({
     }
 
     if (selectedAnswer === currentQuestion.correctAnswer) {
-      setIsCorrect(true);
       setFeedback('Correct!');
       setExplanation(currentQuestion.explanation || '');
       onCorrectAnswer(currentQuestion.reward, currentQuestion.type);
     } else {
-      setIsCorrect(false);
       setFeedback('Incorrect!');
             setExplanation(currentQuestion.explanation || '');
       onIncorrectAnswer(currentQuestion.reward, currentQuestion.type);
