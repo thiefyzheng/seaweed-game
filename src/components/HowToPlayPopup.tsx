@@ -10,7 +10,7 @@ const HowToPlayPopup: React.FC<HowToPlayPopupProps> = ({ onClose }) => {
       <div className="bg-white p-8 rounded-lg">
         <h2 className="text-2xl font-bold mb-4">How to Play</h2>
         <p className="mb-4">
-          Welcome to Seaweed Farmer! Here's how to play:
+          Welcome to Seaweed Farmer! Here&apos;s how to play:
         </p>
         <ol className="list-decimal pl-5 mb-4">
           <li>Grow seaweed by clicking the "Grow Seaweed" button.</li>
