@@ -13,7 +13,7 @@ const HowToPlayPopup: React.FC<HowToPlayPopupProps> = ({ onClose }) => {
           Welcome to Seaweed Farmer! Here&apos;s how to play:
         </p>
         <ol className="list-decimal pl-5 mb-4">
-          <li>Grow seaweed by clicking the "Grow Seaweed" button.</li>
+          <li>Grow seaweed by clicking the &quot;Grow Seaweed&quot; button.</li>
           <li>Answer quizzes to earn more seaweed.</li>
           <li>Sell your seaweed to make money.</li>
           <li>Use your money to buy upgrades and expand your farm.</li>
