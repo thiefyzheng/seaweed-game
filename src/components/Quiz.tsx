@@ -6,6 +6,7 @@ interface Question {
   correctAnswer: string;
   reward: number;
   type: 'seaweed' | 'money';
+  explanation?: string;
 }
 
 interface QuizProps {
@@ -22,6 +23,8 @@ const Quiz: React.FC<QuizProps> = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>('');
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [explanation, setExplanation] = useState<string>('');
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -36,10 +39,14 @@ const Quiz: React.FC<QuizProps> = ({
     }
 
     if (selectedAnswer === currentQuestion.correctAnswer) {
+      setIsCorrect(true);
       setFeedback('Correct!');
+      setExplanation(currentQuestion.explanation || '');
       onCorrectAnswer(currentQuestion.reward, currentQuestion.type);
     } else {
+      setIsCorrect(false);
       setFeedback('Incorrect!');
+            setExplanation(currentQuestion.explanation || '');
       onIncorrectAnswer(currentQuestion.reward, currentQuestion.type);
     }
 
@@ -77,7 +84,15 @@ const Quiz: React.FC<QuizProps> = ({
       >
         Submit Answer
       </button>
-      <div className="feedback mt-4 text-center">{feedback}</div>
+      <div className="feedback mt-4 text-center">
+        {feedback}
+        {explanation && (
+          <div className="explanation mt-2">
+            <p>Explanation: {explanation}</p>
+            <p>Correct Answer: {currentQuestion.correctAnswer}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
