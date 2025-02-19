@@ -290,35 +290,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'UPDATE_GROWTH':
-      const updatedSeaweeds = state.seaweeds.map(seaweed => ({
-        ...seaweed,
-        age: seaweed.age + 1
-      }));
-
-      // Calculate energy drain from rotten seaweed
-      const rottenSeaweeds = updatedSeaweeds.filter(seaweed => {
-        const stage = Object.values(GROWTH_STAGES)
-          .reverse()
-          .find(stage => seaweed.age >= stage.age);
-        return stage?.name === 'Rotten';
-      });
-
-      const energyDrain = rottenSeaweeds.length > 0
-        ? Math.round(10 * rottenSeaweeds.length)
-        : 0;
-
-      if (energyDrain > 0) {
-        return {
-          ...state,
-          seaweeds: updatedSeaweeds,
-          energy: Math.max(0, state.energy - energyDrain),
-          eventMessage: `Lost ${energyDrain} energy from rotten seaweed!`
-        };
-      }
-
       return {
         ...state,
-        seaweeds: updatedSeaweeds
+        seaweeds: state.seaweeds.map(seaweed => ({
+          ...seaweed,
+          age: seaweed.age + 1
+        }))
       };
 
     case 'UPDATE_GROWTH_VALUE':
