@@ -3,7 +3,7 @@ interface Question {
   options: string[];
   correctAnswer: string;
   reward: number;
-  type: 'seaweed' | 'money';
+  type: 'seaweed';
   explanation?: string;
 }
 
@@ -21,7 +21,7 @@ const questions: Question[] = [
     options: ["Sabah", "Kelantan", "Perak", "Johor"],
     correctAnswer: "Sabah",
     reward: 8,
-    type: "money",
+    type: "seaweed",
     "explanation": "Sabah is known for its extensive seaweed farming operations."
   },
   {
@@ -37,7 +37,7 @@ const questions: Question[] = [
     options: ["Poor product quality", "Increased production costs", "Labor shortages", "All of the above"],
     correctAnswer: "Poor product quality",
     reward: 7,
-    type: "money",
+    type: "seaweed",
     "explanation": "Inconsistent drying leads to reduced quality and market value."
   },
   {
@@ -53,7 +53,7 @@ const questions: Question[] = [
     options: ["Extraction of carrageenan", "Food additive", "Traditional medicine", "All of the above"],
     correctAnswer: "All of the above",
     reward: 10,
-    type: "money",
+    type: "seaweed",
     "explanation": "Glacilaria is used for carrageenan extraction, as a food additive, and in traditional medicine."
   },
   {
@@ -69,7 +69,7 @@ const questions: Question[] = [
     options: ["Improving water quality", "Increasing production costs", "Reducing biodiversity"],
     correctAnswer: "Improving water quality",
     reward: 8,
-    type: "money",
+    type: "seaweed",
     "explanation": "Seaweed helps to filter and improve water quality in shrimp ponds."
   },
   {
@@ -85,7 +85,7 @@ const questions: Question[] = [
     options: ["Habitat destruction", "Pollution", "Overpopulation of certain species"],
     correctAnswer: "Habitat destruction",
     reward: 7,
-    type: "money",
+    type: "seaweed",
     "explanation": "Over-harvesting can lead to the destruction of marine habitats."
   }
 ];
