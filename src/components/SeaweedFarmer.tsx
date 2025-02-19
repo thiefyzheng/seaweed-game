@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useReducer, useEffect, useCallback } from 'react';
-import { AlertCircle, DollarSign, Info, Trophy } from 'lucide-react';
+import { AlertCircle, Info, Trophy, Leaf } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import Quiz from './Quiz';
 import questions from '../lib/questions';
 
 // Game constants
-const INITIAL_MONEY = 20;
+const INITIAL_ENERGY = 100;
 const UPDATE_INTERVAL = 1000; // Faster updates for shorter game
 const MARKET_UPDATE_CHANCE = 0.6;
 
@@ -28,38 +28,38 @@ const SEAWEED_TYPES = {
   EUCHEUMA: {
     name: 'Eucheuma',
     description: 'Cultivated for carrageenan production',
-    basePrice: 20,
-    plantingCost: 5,
+    energyCost: 15,
     color: 'bg-red-400',
     specialEffect: 'Faster growth in warm waters'
   },
   GRACILARIA: {
     name: 'Gracilaria',
     description: 'High-quality agar source',
-    basePrice: 30,
-    plantingCost: 8,
+    energyCost: 25,
     color: 'bg-purple-400',
     specialEffect: 'Thrives in shrimp ponds'
   },
   SARGASSUM: {
     name: 'Sargassum',
     description: 'Traditional medicinal uses',
-    basePrice: 40,
-    plantingCost: 12,
+    energyCost: 35,
     color: 'bg-green-400',
     specialEffect: 'Valuable for health benefits'
   }
 } as const;
 
-const MARKET_PRICE_RANGE = { MIN: 5, MAX: 30 };
+const GROWTH_VALUE_SCALE = {
+  MIN: 10, 
+  MAX: 100
+};
 
 const GROWTH_STAGES = {
-  SEEDLING: { name: 'Seedling', age: 0, multiplier: 0.2 },
-  GROWING: { name: 'Growing', age: 2, multiplier: 0.4 },
-  MATURE: { name: 'Mature', age: 4, multiplier: 1.0 },
-  OPTIMAL: { name: 'Optimal', age: 6, multiplier: 1.2 },
-  OVERGROWN: { name: 'Overgrown', age: 8, multiplier: 0.3 },
-  ROTTEN: { name: 'Rotten', age: 10, multiplier: -0.5 }
+  SEEDLING: { name: 'Seedling', age: 0, energyReturn: 0 },
+  GROWING: { name: 'Growing', age: 2, energyReturn: 10 },
+  MATURE: { name: 'Mature', age: 4, energyReturn: 30 },
+  OPTIMAL: { name: 'Optimal', age: 6, energyReturn: 40 },
+  OVERGROWN: { name: 'Overgrown', age: 8, energyReturn: 10 },
+  ROTTEN: { name: 'Rotten', age: 10, energyReturn: -20 }
 };
 
 // Game events with more variety
@@ -87,12 +87,12 @@ const RANDOM_EVENTS = [
     })
   },
   {
-    id: 'marketCrash',
-    message: "📉 Market prices plummet!",
+    id: 'nutrientDrop',
+    message: "📉 Nutrient levels drop! Growth potential decreases!",
     probability: 0.04,
     effect: (state: GameState) => ({
       ...state,
-      marketPrice: Math.max(MARKET_PRICE_RANGE.MIN, state.marketPrice * 0.7)
+      growthValue: Math.max(GROWTH_VALUE_SCALE.MIN, state.growthValue * 0.7)
     })
   },
   {
@@ -119,33 +119,31 @@ const RANDOM_EVENTS = [
     })
   },
   {
-    id: 'marketBoom',
-    message: "📈 Market demand surges!",
-    probability: 0.15,
-    effect: (state: GameState) => ({
-      ...state,
-      marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 1.5)
-    })
-  },
-  {
     id: 'nutrientBloom',
     message: "🌿 Nutrient bloom accelerates growth!",
     probability: 0.15,
     effect: (state: GameState) => ({
       ...state,
-      seaweeds: state.seaweeds.map(seaweed => ({
-        ...seaweed,
-        age: seaweed.age + 3
-      }))
+      growthValue: Math.min(GROWTH_VALUE_SCALE.MAX, state.growthValue * 1.5),
+      energy: state.energy + 20
+    })
+  },
+  {
+    id: 'sunnyDay',
+    message: "☀️ Sunny day boosts your energy!",
+    probability: 0.15,
+    effect: (state: GameState) => ({
+      ...state,
+      energy: Math.min(150, state.energy + 30)
     })
   },
   {
     id: 'researchBreakthrough',
-    message: "🔬 Research breakthrough! All seaweed more valuable!",
+    message: "🔬 Research breakthrough! All seaweed grows faster!",
     probability: 0.12,
     effect: (state: GameState) => ({
       ...state,
-      marketPrice: Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice * 2)
+      growthValue: Math.min(GROWTH_VALUE_SCALE.MAX, state.growthValue * 2)
     })
   },
   {
@@ -196,7 +194,7 @@ const RANDOM_EVENTS = [
           id: Date.now(),
           age: 0,
           type: randomType,
-          marketPriceAtPlanting: state.marketPrice
+          growthValueAtPlanting: state.growthValue
         }]
       };
     }
@@ -204,32 +202,33 @@ const RANDOM_EVENTS = [
 ];
 
 interface GameState {
-  money: number;
+  energy: number;
   seaweeds: Array<{
     id: number;
     age: number;
-    marketPriceAtPlanting: number;
+    growthValueAtPlanting: number;
     type: keyof typeof SEAWEED_TYPES;
   }>;
-  marketPrice: number;
+  growthValue: number;
   eventMessage: string;
-  passiveIncomeRate: number;
+  energyRegenRate: number;
   selectedSeaweedType: keyof typeof SEAWEED_TYPES;
   harvestedCounts: Record<keyof typeof SEAWEED_TYPES, number>;
   gameWon: boolean;
 }
 
+
 type GameAction =
   | { type: 'PLANT_SEAWEED' }
   | { type: 'HARVEST_SEAWEED'; payload: number }
   | { type: 'UPDATE_GROWTH' }
-  | { type: 'UPDATE_MARKET' }
+  | { type: 'UPDATE_GROWTH_VALUE' }
   | { type: 'APPLY_EVENT'; payload: GameState; message: string }
   | { type: 'CLEAR_MESSAGE' }
-  | { type: 'UPDATE_PASSIVE_INCOME' }
+  | { type: 'REGENERATE_ENERGY' }
   | { type: 'SELECT_SEAWEED_TYPE'; payload: keyof typeof SEAWEED_TYPES }
-  | { type: 'CORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'money' } }
-  | { type: 'INCORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'money' } };
+  | { type: 'CORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'energy' } }
+  | { type: 'INCORRECT_ANSWER'; payload: { penalty: number; type: 'seaweed' | 'energy' } };
 
 const checkWinCondition = (counts: Record<keyof typeof SEAWEED_TYPES, number>): boolean => {
   return Object.entries(WIN_CONDITION).every(([type, required]) =>
@@ -241,21 +240,21 @@ const checkWinCondition = (counts: Record<keyof typeof SEAWEED_TYPES, number>): 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'PLANT_SEAWEED':
-      const plantingCost = SEAWEED_TYPES[state.selectedSeaweedType].plantingCost;
-      if (state.money < plantingCost) {
+      const energyCost = SEAWEED_TYPES[state.selectedSeaweedType].energyCost;
+      if (state.energy < energyCost) {
         return {
           ...state,
-          eventMessage: "Not enough money to plant seaweed!"
+          eventMessage: "Not enough energy to plant seaweed!"
         };
       }
       return {
         ...state,
-        money: state.money - plantingCost,
+        energy: state.energy - energyCost,
         seaweeds: [...state.seaweeds, {
           id: Date.now(),
           age: 0,
           type: state.selectedSeaweedType,
-          marketPriceAtPlanting: state.marketPrice
+          growthValueAtPlanting: state.growthValue
         }]
       };
 
@@ -269,8 +268,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
       if (!stage) return state;
 
-      // Use current market price and seaweed type multiplier for value
-      const value = Math.round(state.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
+      // Calculate energy return based on growth stage
+      const energyReturn = Math.round(stage.energyReturn * (state.growthValue / 50));
 
       // Only count Mature or Optimal harvests
       const newCounts = {
@@ -284,13 +283,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
       return {
         ...state,
-        money: state.money + value,
+        energy: state.energy + energyReturn,
         seaweeds: state.seaweeds.filter(s => s.id !== action.payload),
         harvestedCounts: newCounts,
         gameWon,
         eventMessage: gameWon
           ? "🎉 Congratulations! You've mastered seaweed farming!"
-          : `Harvested ${SEAWEED_TYPES[seaweed.type].name} for $${value}!`
+          : `Harvested ${SEAWEED_TYPES[seaweed.type].name} for ${energyReturn} energy!`
       };
 
     case 'UPDATE_GROWTH':
@@ -299,7 +298,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         age: seaweed.age + 1
       }));
 
-      // Calculate losses from rotten seaweed
+      // Calculate energy drain from rotten seaweed
       const rottenSeaweeds = updatedSeaweeds.filter(seaweed => {
         const stage = Object.values(GROWTH_STAGES)
           .reverse()
@@ -307,16 +306,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         return stage?.name === 'Rotten';
       });
 
-      const rottenLoss = rottenSeaweeds.length > 0
-        ? Math.round(state.marketPrice * 0.5 * rottenSeaweeds.length)
+      const energyDrain = rottenSeaweeds.length > 0
+        ? Math.round(10 * rottenSeaweeds.length)
         : 0;
 
-      if (rottenLoss > 0) {
+      if (energyDrain > 0) {
         return {
           ...state,
           seaweeds: updatedSeaweeds,
-          money: Math.max(0, state.money - rottenLoss),
-          eventMessage: `Lost $${rottenLoss} from rotten seaweed!`
+          energy: Math.max(0, state.energy - energyDrain),
+          eventMessage: `Lost ${energyDrain} energy from rotten seaweed!`
         };
       }
 
@@ -325,13 +324,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         seaweeds: updatedSeaweeds
       };
 
-    case 'UPDATE_MARKET':
-      const priceChange = (Math.random() - 0.5) * 20;
+    case 'UPDATE_GROWTH_VALUE':
+      const valueChange = (Math.random() - 0.5) * 20;
       return {
         ...state,
-        marketPrice: Math.max(
-          MARKET_PRICE_RANGE.MIN,
-          Math.min(MARKET_PRICE_RANGE.MAX, state.marketPrice + priceChange)
+        growthValue: Math.max(
+          GROWTH_VALUE_SCALE.MIN,
+          Math.min(GROWTH_VALUE_SCALE.MAX, state.growthValue + valueChange)
         )
       };
 
@@ -341,10 +340,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         eventMessage: action.message
       };
 
-    case 'UPDATE_PASSIVE_INCOME':
+    case 'REGENERATE_ENERGY':
       return {
         ...state,
-        money: state.money + 1,
+        energy: Math.min(150, state.energy + state.energyRegenRate),
       };
 
     case 'SELECT_SEAWEED_TYPE':
@@ -353,10 +352,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         selectedSeaweedType: action.payload
       };
     case 'CORRECT_ANSWER':
-      if (action.payload.type === 'money') {
+      if (action.payload.type === 'energy') {
         return {
           ...state,
-          money: state.money + action.payload.reward,
+          energy: state.energy + action.payload.reward,
         };
       } else {
         return {
@@ -365,15 +364,15 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             id: Date.now(),
             age: 0,
             type: 'EUCHEUMA', // Default seaweed type for now
-            marketPriceAtPlanting: state.marketPrice
+            growthValueAtPlanting: state.growthValue
           }]
         };
       }
     case 'INCORRECT_ANSWER':
-      if (action.payload.type === 'money') {
+      if (action.payload.type === 'energy') {
         return {
           ...state,
-          money: Math.max(0, state.money - action.payload.reward),
+          energy: Math.max(0, state.energy - action.payload.penalty),
         };
       } else {
         return {
@@ -395,11 +394,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
 export default function SeaweedFarmer() {
   const [gameState, dispatch] = useReducer(gameReducer, {
-    money: INITIAL_MONEY,
+    energy: INITIAL_ENERGY,
     seaweeds: [],
-    marketPrice: 15,
+    growthValue: 50,
     eventMessage: '',
-    passiveIncomeRate: 1,
+    energyRegenRate: 2,
     selectedSeaweedType: 'EUCHEUMA',
     harvestedCounts: {
       EUCHEUMA: 0,
@@ -438,26 +437,26 @@ export default function SeaweedFarmer() {
   useEffect(() => {
     const gameInterval = setInterval(() => {
       dispatch({ type: 'UPDATE_GROWTH' });
-      if (Math.random() < MARKET_UPDATE_CHANCE) dispatch({ type: 'UPDATE_MARKET' });
+      if (Math.random() < MARKET_UPDATE_CHANCE) dispatch({ type: 'UPDATE_GROWTH_VALUE' });
       handleRandomEvent();
     }, UPDATE_INTERVAL);
 
-    const passiveIncomeInterval = setInterval(() => {
-      dispatch({ type: 'UPDATE_PASSIVE_INCOME' });
-    }, 10000);
+    const energyRegenInterval = setInterval(() => {
+      dispatch({ type: 'REGENERATE_ENERGY' });
+    }, 5000);
 
     return () => {
       clearInterval(gameInterval);
-      clearInterval(passiveIncomeInterval);
+      clearInterval(energyRegenInterval);
     };
   }, [handleRandomEvent]);
 
-  const handleCorrectAnswer = useCallback((reward: number, type: 'seaweed' | 'money') => {
-    dispatch({ type: 'CORRECT_ANSWER', payload: { reward, type } });
+  const handleCorrectAnswer = useCallback((reward: number) => {
+    dispatch({ type: 'CORRECT_ANSWER', payload: { reward, type: 'seaweed' } });
   }, []);
 
-  const handleIncorrectAnswer = useCallback((reward: number, type: 'seaweed' | 'money') => {
-    dispatch({ type: 'INCORRECT_ANSWER', payload: { reward, type } });
+  const handleIncorrectAnswer = useCallback((penalty: number) => {
+    dispatch({ type: 'INCORRECT_ANSWER', payload: { penalty, type: 'seaweed' } });
   }, []);
 
   return (
@@ -471,16 +470,16 @@ export default function SeaweedFarmer() {
         <CardContent className="p-6">
           <div className="grid grid-cols-2 gap-4 text-center">
             <div className="flex items-center justify-center space-x-2">
-              <DollarSign className="text-green-600" />
-              <span>${gameState.money.toFixed(2)}</span>
+              <Leaf className="text-green-600" />
+              <span>Energy: {gameState.energy}</span>
             </div>
             <Tooltip>
               <TooltipTrigger className="flex items-center justify-center space-x-2">
                 <Info className="text-blue-600" />
-                <span>Market Price: ${gameState.marketPrice.toFixed(2)}/kg</span>
+                <span>Growth Potential: {gameState.growthValue.toFixed(0)}</span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Market price affects harvest value</p>
+                <p>Growth potential affects harvest energy return</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -517,7 +516,7 @@ export default function SeaweedFarmer() {
                     : 'border-transparent'
                 }`}
               >
-                {data.name} (${data.plantingCost})
+                {data.name} ({data.energyCost} energy)
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -533,7 +532,8 @@ export default function SeaweedFarmer() {
           const stage = getGrowthStage(seaweed.age);
           if (!stage) return null;
 
-          const value = Math.round(gameState.marketPrice * stage.multiplier * (SEAWEED_TYPES[seaweed.type].basePrice / 20));
+          const energyReturn = Math.round(stage.energyReturn * (gameState.growthValue / 50));
+          const displayValue = stage.energyReturn < 0 ? `-${Math.abs(energyReturn)}` : `+${energyReturn}`;
 
           return (
             <Tooltip key={seaweed.id}>
@@ -550,7 +550,7 @@ export default function SeaweedFarmer() {
                     <br />
                     {stage.name}
                     <br />
-                    ${value}
+                    {displayValue} energy
                   </div>
                 </div>
               </TooltipTrigger>
@@ -558,7 +558,7 @@ export default function SeaweedFarmer() {
                 <p>Type: {SEAWEED_TYPES[seaweed.type].name}</p>
                 <p>Age: {seaweed.age} days</p>
                 <p>Stage: {stage.name}</p>
-                <p>Value: ${value}</p>
+                <p>Energy Return: {displayValue}</p>
                 <p>{stage.name === 'Mature' || stage.name === 'Optimal' ? '✨ Will count towards goal!' : 'Not ready to count yet'}</p>
                 <p>Click to harvest</p>
               </TooltipContent>
@@ -573,7 +573,7 @@ export default function SeaweedFarmer() {
           size="lg"
           className="w-full bg-green-500 hover:bg-green-600"
         >
-          Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} (${SEAWEED_TYPES[gameState.selectedSeaweedType].plantingCost})
+          Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} ({SEAWEED_TYPES[gameState.selectedSeaweedType].energyCost} energy)
         </Button>
 
         <Card className="border shadow-sm">

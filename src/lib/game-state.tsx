@@ -25,8 +25,8 @@ type GameAction =
   | { type: 'CLEAR_MESSAGE' }
   | { type: 'UPDATE_PASSIVE_INCOME' }
   | { type: 'SELECT_SEAWEED_TYPE'; payload: string }
-  | { type: 'CORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'money' } }
-  | { type: 'INCORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'money' } };
+  | { type: 'CORRECT_ANSWER'; payload: { reward: number } }
+  | { type: 'INCORRECT_ANSWER'; payload: { reward: number } };
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -47,9 +47,20 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'SELECT_SEAWEED_TYPE':
       return state;
     case 'CORRECT_ANSWER':
-      return state;
+      return {
+        ...state,
+        seaweeds: [...state.seaweeds, {
+          id: Date.now(),
+          age: 0,
+          marketPriceAtPlanting: state.marketPrice,
+          type: 'seaweed', // Default seaweed type for now
+        }]
+      };
     case 'INCORRECT_ANSWER':
-      return state;
+      return {
+        ...state,
+        seaweeds: state.seaweeds.slice(0, -1),
+      };
     default:
       return state;
   }

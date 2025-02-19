@@ -5,14 +5,13 @@ interface Question {
   options: string[];
   correctAnswer: string;
   reward: number;
-  type: 'seaweed' | 'money';
   explanation?: string;
 }
 
 interface QuizProps {
   questions: Question[];
-  onCorrectAnswer: (reward: number, type: 'seaweed' | 'money') => void;
-  onIncorrectAnswer: (reward: number, type: 'seaweed' | 'money') => void;
+  onCorrectAnswer: (reward: number, type: 'seaweed' | 'energy') => void;
+  onIncorrectAnswer: (penalty: number, type: 'seaweed' | 'energy') => void;
 }
 
 const Quiz: React.FC<QuizProps> = ({
@@ -40,11 +39,11 @@ const Quiz: React.FC<QuizProps> = ({
     if (selectedAnswer === currentQuestion.correctAnswer) {
       setFeedback('Correct!');
       setExplanation(currentQuestion.explanation || '');
-      onCorrectAnswer(currentQuestion.reward, currentQuestion.type);
+      onCorrectAnswer(currentQuestion.reward);
     } else {
       setFeedback('Incorrect!');
             setExplanation(currentQuestion.explanation || '');
-      onIncorrectAnswer(currentQuestion.reward, currentQuestion.type);
+      onIncorrectAnswer(currentQuestion.reward);
     }
 
     setSelectedAnswer(null);
@@ -85,6 +84,7 @@ const Quiz: React.FC<QuizProps> = ({
         {feedback}
         {explanation && (
           <div className="explanation mt-2">
+            <p>Explanation: {explanation}</p>
             <p>Explanation: {explanation}</p>
             <p>Correct Answer: {currentQuestion.correctAnswer}</p>
           </div>
