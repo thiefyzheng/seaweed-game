@@ -35,19 +35,19 @@ const Quiz: React.FC<QuizProps> = ({
       setFeedback('Please select an answer.');
       return;
     }
-
+  
     if (selectedAnswer === currentQuestion.correctAnswer) {
       setFeedback('Correct!');
       setExplanation(currentQuestion.explanation || '');
-      onCorrectAnswer(currentQuestion.reward);
+      onCorrectAnswer(currentQuestion.reward, 'seaweed'); // Add the second argument here
     } else {
       setFeedback('Incorrect!');
-            setExplanation(currentQuestion.explanation || '');
-      onIncorrectAnswer(currentQuestion.reward);
+      setExplanation(currentQuestion.explanation || '');
+      onIncorrectAnswer(currentQuestion.reward, 'energy'); // Add the second argument here
     }
-
+  
     setSelectedAnswer(null);
-
+  
     if (currentQuestionIndex < questions.length - 1) {
       setTimeout(() => {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -57,6 +57,7 @@ const Quiz: React.FC<QuizProps> = ({
       setFeedback('Quiz completed!');
     }
   };
+  
 
   return (
     <div className="quiz-container bg-white rounded-lg shadow-md p-6">
