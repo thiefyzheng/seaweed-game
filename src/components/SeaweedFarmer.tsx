@@ -57,9 +57,6 @@ const GROWTH_STAGES = {
   SEEDLING: { name: 'Seedling', age: 0, energyReturn: 0 },
   GROWING: { name: 'Growing', age: 2, energyReturn: 10 },
   MATURE: { name: 'Mature', age: 4, energyReturn: 30 },
-  OPTIMAL: { name: 'Optimal', age: 6, energyReturn: 40 },
-  OVERGROWN: { name: 'Overgrown', age: 8, energyReturn: 10 },
-  ROTTEN: { name: 'Rotten', age: 10, energyReturn: -20 }
 };
 
 // Game events with more variety
@@ -271,10 +268,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       // Calculate energy return based on growth stage
       const energyReturn = Math.round(stage.energyReturn * (state.growthValue / 50));
 
-      // Only count Mature or Optimal harvests
+      // Only count Mature harvests
       const newCounts = {
         ...state.harvestedCounts,
-        [seaweed.type]: stage.name === 'Mature' || stage.name === 'Optimal'
+        [seaweed.type]: stage.name === 'Mature'
           ? state.harvestedCounts[seaweed.type] + 1
           : state.harvestedCounts[seaweed.type]
       };
@@ -559,7 +556,7 @@ export default function SeaweedFarmer() {
                 <p>Age: {seaweed.age} days</p>
                 <p>Stage: {stage.name}</p>
                 <p>Energy Return: {displayValue}</p>
-                <p>{stage.name === 'Mature' || stage.name === 'Optimal' ? '✨ Will count towards goal!' : 'Not ready to count yet'}</p>
+                <p>{stage.name === 'Mature' ? '✨ Will count towards goal!' : 'Not ready to count yet'}</p>
                 <p>Click to harvest</p>
               </TooltipContent>
             </Tooltip>
