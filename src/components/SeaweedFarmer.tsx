@@ -10,7 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import Quiz from './Quiz';
+import Quiz, { SeaweedType } from './Quiz';
 import questions from '../lib/questions';
 
 // Game constants
@@ -224,7 +224,7 @@ type GameAction =
   | { type: 'CLEAR_MESSAGE' }
   | { type: 'REGENERATE_ENERGY' }
   | { type: 'SELECT_SEAWEED_TYPE'; payload: keyof typeof SEAWEED_TYPES }
-  | { type: 'CORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'energy' } }
+  | { type: 'CORRECT_ANSWER'; payload: { reward: number; type: 'seaweed' | 'energy'; seaweedType?: SeaweedType } }
   | { type: 'INCORRECT_ANSWER'; payload: { penalty: number; type: 'seaweed' | 'energy' } };
 
 const checkWinCondition = (counts: Record<keyof typeof SEAWEED_TYPES, number>): boolean => {
@@ -332,14 +332,17 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           energy: state.energy + action.payload.reward,
         };
       } else {
+        // Use the seaweed type from the payload or default to EUCHEUMA
+        const seaweedType = action.payload.seaweedType || 'EUCHEUMA';
         return {
           ...state,
           seaweeds: [...state.seaweeds, {
             id: Date.now(),
             age: 0,
-            type: 'EUCHEUMA', // Default seaweed type for now
+            type: seaweedType,
             growthValueAtPlanting: state.growthValue
-          }]
+          }],
+          eventMessage: `Quiz reward: You earned a ${seaweedType} seaweed!`
         };
       }
     case 'INCORRECT_ANSWER':
@@ -425,12 +428,18 @@ export default function SeaweedFarmer() {
     };
   }, [handleRandomEvent]);
 
-  const handleCorrectAnswer = useCallback((reward: number) => {
-    dispatch({ type: 'CORRECT_ANSWER', payload: { reward, type: 'seaweed' } });
+  const handleCorrectAnswer = useCallback((reward: number, type: 'seaweed' | 'energy', seaweedType?: SeaweedType) => {
+    dispatch({ 
+      type: 'CORRECT_ANSWER', 
+      payload: { reward, type, seaweedType } 
+    });
   }, []);
 
-  const handleIncorrectAnswer = useCallback((penalty: number) => {
-    dispatch({ type: 'INCORRECT_ANSWER', payload: { penalty, type: 'seaweed' } });
+  const handleIncorrectAnswer = useCallback((penalty: number, type: 'seaweed' | 'energy') => {
+    dispatch({ 
+      type: 'INCORRECT_ANSWER', 
+      payload: { penalty, type } 
+    });
   }, []);
 
   return (
