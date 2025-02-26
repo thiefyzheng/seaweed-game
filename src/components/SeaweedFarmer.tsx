@@ -30,23 +30,48 @@ const SEAWEED_TYPES = {
     description: 'Cultivated for carrageenan production',
     energyCost: 15,
     color: 'bg-red-400',
-    specialEffect: 'Faster growth in warm waters'
+    specialEffect: 'Faster growth in warm waters',
+    // Add image paths for each growth stage
+    images: {
+      SEEDLING: '/images/eucheuma_seedling.png',
+      GROWING: '/images/eucheuma_growing.png',
+      MATURE: '/images/eucheuma_mature.png',
+    }
   },
   GRACILARIA: {
     name: 'Gracilaria',
     description: 'High-quality agar source',
     energyCost: 25,
     color: 'bg-purple-400',
-    specialEffect: 'Thrives in shrimp ponds'
+    specialEffect: 'Thrives in shrimp ponds',
+    // Add image paths for each growth stage
+    images: {
+      SEEDLING: '/images/gracilaria_seedling.png',
+      GROWING: '/images/gracilaria_growing.png',
+      MATURE: '/images/gracilaria_mature.png',
+    }
   },
   SARGASSUM: {
     name: 'Sargassum',
     description: 'Traditional medicinal uses',
     energyCost: 35,
     color: 'bg-green-400',
-    specialEffect: 'Valuable for health benefits'
+    specialEffect: 'Valuable for health benefits',
+    // Add image paths for each growth stage
+    images: {
+      SEEDLING: '/images/sargassum_seedling.png',
+      GROWING: '/images/sargassum_growing.png',
+      MATURE: '/images/sargassum_mature.png',
+    }
   }
 } as const;
+
+// For fallback when images aren't available yet
+const PLACEHOLDER_IMAGES = {
+  SEEDLING: '/api/placeholder/100/100',
+  GROWING: '/api/placeholder/100/100',
+  MATURE: '/api/placeholder/100/100'
+};
 
 const GROWTH_VALUE_SCALE = {
   MIN: 10, 
@@ -54,9 +79,9 @@ const GROWTH_VALUE_SCALE = {
 };
 
 const GROWTH_STAGES = {
-  SEEDLING: { name: 'Seedling', age: 0, energyReturn: 0 },
-  GROWING: { name: 'Growing', age: 2, energyReturn: 10 },
-  MATURE: { name: 'Mature', age: 4, energyReturn: 30 },
+  SEEDLING: { name: 'Seedling', age: 0, energyReturn: 0, id: 'SEEDLING' },
+  GROWING: { name: 'Growing', age: 2, energyReturn: 10, id: 'GROWING' },
+  MATURE: { name: 'Mature', age: 4, energyReturn: 30, id: 'MATURE' },
 };
 
 // Game events with more variety
@@ -391,6 +416,18 @@ export default function SeaweedFarmer() {
       .find(stage => age >= stage.age);
   }, []);
 
+  // Get the image for a seaweed based on its type and growth stage
+  const getSeaweedImage = useCallback((type: keyof typeof SEAWEED_TYPES, stageName: string) => {
+    // Convert stage name to the corresponding ID in GROWTH_STAGES
+    const stageId = Object.values(GROWTH_STAGES).find(stage => stage.name === stageName)?.id;
+    
+    if (!stageId) return PLACEHOLDER_IMAGES.SEEDLING;
+    
+    // Try to get the specific image for this seaweed type and growth stage
+    // Fall back to placeholder if not found
+    return SEAWEED_TYPES[type].images[stageId as keyof typeof PLACEHOLDER_IMAGES] || PLACEHOLDER_IMAGES[stageId as keyof typeof PLACEHOLDER_IMAGES];
+  }, []);
+
   const handleRandomEvent = useCallback(() => {
     const applicableEvents = RANDOM_EVENTS.filter(
       event => Math.random() < event.probability
@@ -517,17 +554,27 @@ export default function SeaweedFarmer() {
 
           const energyReturn = Math.round(stage.energyReturn * (gameState.growthValue / 50));
           const displayValue = stage.energyReturn < 0 ? `-${Math.abs(energyReturn)}` : `+${energyReturn}`;
+          const seaweedImage = getSeaweedImage(seaweed.type, stage.name);
 
           return (
             <Tooltip key={seaweed.id}>
               <TooltipTrigger>
                 <div
-                  className={`h-20 ${SEAWEED_TYPES[seaweed.type].color} rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot`}
+                  className={`h-24 relative rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot overflow-hidden ${SEAWEED_TYPES[seaweed.type].color}`}
                   onClick={() => dispatch({
                     type: 'HARVEST_SEAWEED',
                     payload: seaweed.id
                   })}
                 >
+                  {/* Use an actual image for the seaweed */}
+                  <div className="relative h-full w-full flex items-center justify-center">
+                    <img 
+                      src={seaweedImage} 
+                      alt={`${SEAWEED_TYPES[seaweed.type].name} in ${stage.name} stage`}
+                      className="h-full w-auto object-contain z-0"
+                    />
+                  </div>
+                  
                   <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
                     {SEAWEED_TYPES[seaweed.type].name}
                     <br />
