@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface Question {
   question: string;
@@ -8,7 +8,6 @@ interface Question {
   explanation?: string;
 }
 
-// Use the existing seaweed types from your game
 type SeaweedType = 'EUCHEUMA' | 'GRACILARIA' | 'SARGASSUM';
 
 interface QuizProps {
@@ -26,12 +25,12 @@ const Quiz: React.FC<QuizProps> = ({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>('');
   const [explanation, setExplanation] = useState<string>('');
+  const [showExplanation, setShowExplanation] = useState(false); // New state to control explanation visibility
   const [rewardSeaweed, setRewardSeaweed] = useState<SeaweedType | null>(null);
-  
+
   const currentQuestion = questions[currentQuestionIndex];
-  
   const seaweedTypes: SeaweedType[] = ['EUCHEUMA', 'GRACILARIA', 'SARGASSUM'];
-  
+
   const getRandomSeaweed = (): SeaweedType => {
     const randomIndex = Math.floor(Math.random() * seaweedTypes.length);
     return seaweedTypes[randomIndex];
@@ -47,30 +46,37 @@ const Quiz: React.FC<QuizProps> = ({
       return;
     }
 
+    setShowExplanation(false); // Hide explanation initially
+
     if (selectedAnswer === currentQuestion.correctAnswer) {
       const randomSeaweed = getRandomSeaweed();
       setRewardSeaweed(randomSeaweed);
       setFeedback(`Correct! You earned a ${randomSeaweed} seaweed!`);
-      setExplanation(currentQuestion.explanation || '');
       onCorrectAnswer(currentQuestion.reward, 'seaweed', randomSeaweed);
     } else {
       setRewardSeaweed(null);
       setFeedback('Incorrect!');
-      setExplanation(currentQuestion.explanation || '');
       onIncorrectAnswer(currentQuestion.reward, 'energy');
     }
 
-    setSelectedAnswer(null);
+    // Set explanation and show it after a delay
+    setExplanation(currentQuestion.explanation || '');
+    setTimeout(() => {
+      setShowExplanation(true); // Show explanation after feedback
+    }, 1000); // 1-second delay before showing explanation
 
-    if (currentQuestionIndex < questions.length - 1) {
-      setTimeout(() => {
+    // Move to next question or end quiz
+    setTimeout(() => {
+      if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setFeedback('');
         setRewardSeaweed(null);
-      }, 2000);
-    } else {
-      setFeedback('Quiz completed!');
-    }
+        setShowExplanation(false); // Reset for next question
+        setSelectedAnswer(null);
+      } else {
+        setFeedback('Quiz completed!');
+      }
+    }, 2000); // 2-second delay before moving to next question
   };
 
   return (
@@ -99,15 +105,17 @@ const Quiz: React.FC<QuizProps> = ({
         {feedback}
         {rewardSeaweed && (
           <div className="seaweed-reward mt-2">
-            <span className={`inline-block w-6 h-6 rounded-full ${
-              rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' : 
-              rewardSeaweed === 'GRACILARIA' ? 'bg-purple-400' : 
-              'bg-green-400'
-            } mr-2`}></span>
+            <span
+              className={`inline-block w-6 h-6 rounded-full ${
+                rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' : 
+                rewardSeaweed === 'GRACILARIA' ? 'bg-purple-400' : 
+                'bg-green-400'
+              } mr-2`}
+            ></span>
             {rewardSeaweed}
           </div>
         )}
-        {explanation && (
+        {showExplanation && explanation && (
           <div className="explanation mt-2">
             <p>Explanation: {explanation}</p>
             <p>Correct Answer: {currentQuestion.correctAnswer}</p>
