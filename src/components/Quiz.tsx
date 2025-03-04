@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface Question {
   question: string;
@@ -25,7 +25,7 @@ const Quiz: React.FC<QuizProps> = ({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>('');
   const [explanation, setExplanation] = useState<string>('');
-  const [showExplanation, setShowExplanation] = useState(false); // New state to control explanation visibility
+  const [showExplanation, setShowExplanation] = useState(false);
   const [rewardSeaweed, setRewardSeaweed] = useState<SeaweedType | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -59,19 +59,17 @@ const Quiz: React.FC<QuizProps> = ({
       onIncorrectAnswer(currentQuestion.reward, 'energy');
     }
 
-    // Set explanation and show it after a delay
     setExplanation(currentQuestion.explanation || '');
     setTimeout(() => {
       setShowExplanation(true); // Show explanation after feedback
     }, 1000); // 1-second delay before showing explanation
 
-    // Move to next question or end quiz
     setTimeout(() => {
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setFeedback('');
         setRewardSeaweed(null);
-        setShowExplanation(false); // Reset for next question
+        setShowExplanation(false);
         setSelectedAnswer(null);
       } else {
         setFeedback('Quiz completed!');
