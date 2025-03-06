@@ -480,156 +480,170 @@ export default function SeaweedFarmer() {
   }, []);
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
-      <Card className="border shadow-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            🌱 Seaweed Farmer 🎮
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <Leaf className="text-green-600" />
-              <span>Energy: {gameState.energy}</span>
-            </div>
-            <Tooltip>
-              <TooltipTrigger className="flex items-center justify-center space-x-2">
-                <Info className="text-blue-600" />
-                <span>Growth Potential: {gameState.growthValue.toFixed(0)}</span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Growth potential affects harvest energy return</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="w-full max-w-4xl mx-auto p-4">
+      {/* Main game container with responsive layout */}
+      <div className="flex flex-col md:flex-row md:gap-4">
+        {/* Left/Top section (Seaweed farm) */}
+        <div className="w-full md:w-1/2 md:order-1 flex flex-col space-y-4">
+          <Card className="border shadow-sm">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-center">
+                🌱 Seaweed Farmer 🎮
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="flex items-center justify-center space-x-2">
+                  <Leaf className="text-green-600" />
+                  <span>Energy: {gameState.energy}</span>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center justify-center space-x-2">
+                    <Info className="text-blue-600" />
+                    <span>Growth Potential: {gameState.growthValue.toFixed(0)}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Growth potential affects harvest energy return</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card className="border shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <Trophy className={`h-6 w-6 ${gameState.gameWon ? 'text-yellow-500' : 'text-gray-400'}`} />
-            <div className="flex space-x-4">
-              {Object.entries(WIN_CONDITION).map(([type, required]) => (
-                <div key={type} className="text-sm">
-                  <span className="font-medium">{SEAWEED_TYPES[type as keyof typeof SEAWEED_TYPES].name}:</span>
-                  <span className={gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES] >= required ? 'text-green-600' : ''}>
-                    {' '}{gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES]}/{required}
+          <Card className="border shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <Trophy className={`h-6 w-6 ${gameState.gameWon ? 'text-yellow-500' : 'text-gray-400'}`} />
+                <div className="flex space-x-4">
+                  {Object.entries(WIN_CONDITION).map(([type, required]) => (
+                    <div key={type} className="text-sm">
+                      <span className="font-medium">{SEAWEED_TYPES[type as keyof typeof SEAWEED_TYPES].name}:</span>
+                      <span className={gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES] >= required ? 'text-green-600' : ''}>
+                        {' '}{gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES]}/{required}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            {Object.entries(SEAWEED_TYPES).map(([type, data]) => (
+              <Tooltip key={type}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => dispatch({ type: 'SELECT_SEAWEED_TYPE', payload: type as keyof typeof SEAWEED_TYPES })}
+                    className={`${data.color} text-white w-full border-2 ${
+                      gameState.selectedSeaweedType === type
+                        ? 'border-yellow-400 shadow-lg'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    {data.name} ({data.energyCost} energy)
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{data.description}</p>
+                  <p>{data.specialEffect}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+
+          {/* Scrollable seaweed container with fixed height */}
+          <div className="overflow-y-auto h-64 md:h-80">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {gameState.seaweeds.map((seaweed) => {
+                const stage = getGrowthStage(seaweed.age);
+                if (!stage) return null;
+
+                const energyReturn = Math.round(stage.energyReturn * (gameState.growthValue / 50));
+                const displayValue = stage.energyReturn < 0 ? `-${Math.abs(energyReturn)}` : `+${energyReturn}`;
+                const seaweedImage = getSeaweedImage(seaweed.type, stage.name);
+
+                return (
+                  <Tooltip key={seaweed.id}>
+                    <TooltipTrigger>
+                      <div
+                        className={`h-24 relative rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot overflow-hidden ${SEAWEED_TYPES[seaweed.type].color}`}
+                        onClick={() => dispatch({
+                          type: 'HARVEST_SEAWEED',
+                          payload: seaweed.id
+                        })}
+                      >
+                        {/* Use an actual image for the seaweed */}
+                        <div className="relative h-full w-full flex items-center justify-center">
+                          <img 
+                            src={seaweedImage} 
+                            alt={`${SEAWEED_TYPES[seaweed.type].name} in ${stage.name} stage`}
+                            className="h-full w-auto object-contain z-0"
+                          />
+                        </div>
+                        
+                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
+                          {SEAWEED_TYPES[seaweed.type].name}
+                          <br />
+                          {stage.name}
+                          <br />
+                          {displayValue} energy
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Type: {SEAWEED_TYPES[seaweed.type].name}</p>
+                      <p>Age: {seaweed.age} days</p>
+                      <p>Stage: {stage.name}</p>
+                      <p>Energy Return: {displayValue}</p>
+                      <p>{stage.name === 'Mature' ? '✨ Will count towards goal!' : 'Not ready to count yet'}</p>
+                      <p>Click to harvest</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Button
+              onClick={() => dispatch({ type: 'PLANT_SEAWEED' })}
+              size="lg"
+              className="w-full bg-green-500 hover:bg-green-600"
+            >
+              Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} ({SEAWEED_TYPES[gameState.selectedSeaweedType].energyCost} energy)
+            </Button>
+
+            <Card className="border shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-center space-x-2">
+                  <Info className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-muted-foreground">
+                    {SEAWEED_TYPES[gameState.selectedSeaweedType].description}
                   </span>
                 </div>
-              ))}
-            </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        {Object.entries(SEAWEED_TYPES).map(([type, data]) => (
-          <Tooltip key={type}>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => dispatch({ type: 'SELECT_SEAWEED_TYPE', payload: type as keyof typeof SEAWEED_TYPES })}
-                className={`${data.color} text-white w-full border-2 ${
-                  gameState.selectedSeaweedType === type
-                    ? 'border-yellow-400 shadow-lg'
-                    : 'border-transparent'
-                }`}
-              >
-                {data.name} ({data.energyCost} energy)
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{data.description}</p>
-              <p>{data.specialEffect}</p>
-            </TooltipContent>
-          </Tooltip>
-        ))}
+          {gameState.eventMessage && (
+            <Alert variant="default" className="border shadow-sm">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">{gameState.eventMessage}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        {/* Right/Bottom section (Quiz) */}
+        <div className="w-full md:w-1/2 md:order-2 mt-4 md:mt-0">
+          <div className="sticky top-4">
+            <Quiz
+              questions={questions}
+              onCorrectAnswer={handleCorrectAnswer}
+              onIncorrectAnswer={handleIncorrectAnswer}
+            />
+          </div>
+        </div>
       </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-        {gameState.seaweeds.map((seaweed) => {
-          const stage = getGrowthStage(seaweed.age);
-          if (!stage) return null;
-
-          const energyReturn = Math.round(stage.energyReturn * (gameState.growthValue / 50));
-          const displayValue = stage.energyReturn < 0 ? `-${Math.abs(energyReturn)}` : `+${energyReturn}`;
-          const seaweedImage = getSeaweedImage(seaweed.type, stage.name);
-
-          return (
-            <Tooltip key={seaweed.id}>
-              <TooltipTrigger>
-                <div
-                  className={`h-24 relative rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot overflow-hidden ${SEAWEED_TYPES[seaweed.type].color}`}
-                  onClick={() => dispatch({
-                    type: 'HARVEST_SEAWEED',
-                    payload: seaweed.id
-                  })}
-                >
-                  {/* Use an actual image for the seaweed */}
-                  <div className="relative h-full w-full flex items-center justify-center">
-                    <img 
-                      src={seaweedImage} 
-                      alt={`${SEAWEED_TYPES[seaweed.type].name} in ${stage.name} stage`}
-                      className="h-full w-auto object-contain z-0"
-                    />
-                  </div>
-                  
-                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
-                    {SEAWEED_TYPES[seaweed.type].name}
-                    <br />
-                    {stage.name}
-                    <br />
-                    {displayValue} energy
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Type: {SEAWEED_TYPES[seaweed.type].name}</p>
-                <p>Age: {seaweed.age} days</p>
-                <p>Stage: {stage.name}</p>
-                <p>Energy Return: {displayValue}</p>
-                <p>{stage.name === 'Mature' ? '✨ Will count towards goal!' : 'Not ready to count yet'}</p>
-                <p>Click to harvest</p>
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Button
-          onClick={() => dispatch({ type: 'PLANT_SEAWEED' })}
-          size="lg"
-          className="w-full bg-green-500 hover:bg-green-600"
-        >
-          Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} ({SEAWEED_TYPES[gameState.selectedSeaweedType].energyCost} energy)
-        </Button>
-
-        <Card className="border shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center space-x-2">
-              <Info className="h-4 w-4 text-blue-500" />
-              <span className="text-sm text-muted-foreground">
-                {SEAWEED_TYPES[gameState.selectedSeaweedType].description}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Quiz
-        questions={questions}
-        onCorrectAnswer={handleCorrectAnswer}
-        onIncorrectAnswer={handleIncorrectAnswer}
-      />
-
-      {gameState.eventMessage && (
-        <Alert variant="default" className="border shadow-sm">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-sm">{gameState.eventMessage}</AlertDescription>
-        </Alert>
-      )}
 
       <style jsx global>{`
         @keyframes sway {
