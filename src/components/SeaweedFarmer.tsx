@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useReducer, useEffect, useCallback } from 'react';
+import React, { useReducer, useEffect, useCallback, useState } from 'react';
 import { AlertCircle, Info, Trophy, Leaf } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -409,6 +409,30 @@ export default function SeaweedFarmer() {
     },
     gameWon: false
   });
+  
+  // State to track if the layout is in vertical mode
+  const [isVertical, setIsVertical] = useState(true);
+  // State to track viewport height
+  const [viewportHeight, setViewportHeight] = useState(0);
+
+  // Calculate viewport dimensions on mount and resize
+  useEffect(() => {
+    const handleResize = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      setIsVertical(vw < 768); // Same breakpoint as Tailwind's md
+      setViewportHeight(vh);
+    };
+    
+    // Set initial values
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getGrowthStage = useCallback((age: number) => {
     return Object.values(GROWTH_STAGES)
@@ -478,29 +502,36 @@ export default function SeaweedFarmer() {
       payload: { penalty, type } 
     });
   }, []);
+  
+  // Calculate heights for vertical mode
+  const verticalTopHeight = isVertical ? `${Math.floor(viewportHeight * 0.5)}px` : 'auto';
+  const verticalBottomHeight = isVertical ? `${Math.floor(viewportHeight * 0.5)}px` : 'auto';
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
+    <div className="w-full max-w-4xl mx-auto">
       {/* Main game container with responsive layout */}
-      <div className="flex flex-col md:flex-row md:gap-4">
-        {/* Left/Top section (Seaweed farm) */}
-        <div className="w-full md:w-1/2 md:order-1 flex flex-col space-y-4">
+      <div className={`flex flex-col md:flex-row ${isVertical ? 'h-screen' : ''}`}>
+        {/* Top section (Seaweed farm) in vertical mode */}
+        <div 
+          className="w-full md:w-1/2 md:order-1 flex flex-col space-y-2 p-2 overflow-auto" 
+          style={{ height: isVertical ? verticalTopHeight : 'auto' }}
+        >
           <Card className="border shadow-sm">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">
+            <CardHeader className="py-2 px-4">
+              <CardTitle className="text-xl font-bold text-center">
                 🌱 Seaweed Farmer 🎮
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-2 gap-4 text-center">
+            <CardContent className="p-2">
+              <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="flex items-center justify-center space-x-2">
-                  <Leaf className="text-green-600" />
+                  <Leaf className="text-green-600 h-4 w-4" />
                   <span>Energy: {gameState.energy}</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger className="flex items-center justify-center space-x-2">
-                    <Info className="text-blue-600" />
-                    <span>Growth Potential: {gameState.growthValue.toFixed(0)}</span>
+                    <Info className="text-blue-600 h-4 w-4" />
+                    <span>Growth: {gameState.growthValue.toFixed(0)}</span>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Growth potential affects harvest energy return</p>
@@ -511,12 +542,12 @@ export default function SeaweedFarmer() {
           </Card>
 
           <Card className="border shadow-sm">
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
-                <Trophy className={`h-6 w-6 ${gameState.gameWon ? 'text-yellow-500' : 'text-gray-400'}`} />
-                <div className="flex space-x-4">
+                <Trophy className={`h-5 w-5 ${gameState.gameWon ? 'text-yellow-500' : 'text-gray-400'}`} />
+                <div className="flex space-x-3">
                   {Object.entries(WIN_CONDITION).map(([type, required]) => (
-                    <div key={type} className="text-sm">
+                    <div key={type} className="text-xs">
                       <span className="font-medium">{SEAWEED_TYPES[type as keyof typeof SEAWEED_TYPES].name}:</span>
                       <span className={gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES] >= required ? 'text-green-600' : ''}>
                         {' '}{gameState.harvestedCounts[type as keyof typeof SEAWEED_TYPES]}/{required}
@@ -528,19 +559,19 @@ export default function SeaweedFarmer() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-2">
             {Object.entries(SEAWEED_TYPES).map(([type, data]) => (
               <Tooltip key={type}>
                 <TooltipTrigger asChild>
                   <Button
                     onClick={() => dispatch({ type: 'SELECT_SEAWEED_TYPE', payload: type as keyof typeof SEAWEED_TYPES })}
-                    className={`${data.color} text-white w-full border-2 ${
+                    className={`${data.color} text-white w-full border-2 text-xs h-8 ${
                       gameState.selectedSeaweedType === type
                         ? 'border-yellow-400 shadow-lg'
                         : 'border-transparent'
                     }`}
                   >
-                    {data.name} ({data.energyCost} energy)
+                    {data.name} ({data.energyCost})
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -551,9 +582,9 @@ export default function SeaweedFarmer() {
             ))}
           </div>
 
-          {/* Scrollable seaweed container with fixed height */}
-          <div className="overflow-y-auto h-64 md:h-80">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {/* Scrollable seaweed container with dynamic height */}
+          <div className="flex-grow overflow-y-auto min-h-32">
+            <div className="grid grid-cols-3 gap-2">
               {gameState.seaweeds.map((seaweed) => {
                 const stage = getGrowthStage(seaweed.age);
                 if (!stage) return null;
@@ -566,13 +597,12 @@ export default function SeaweedFarmer() {
                   <Tooltip key={seaweed.id}>
                     <TooltipTrigger>
                       <div
-                        className={`h-24 relative rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot overflow-hidden ${SEAWEED_TYPES[seaweed.type].color}`}
+                        className={`h-16 relative rounded cursor-pointer transition-transform hover:scale-105 seaweed-plot overflow-hidden ${SEAWEED_TYPES[seaweed.type].color}`}
                         onClick={() => dispatch({
                           type: 'HARVEST_SEAWEED',
                           payload: seaweed.id
                         })}
                       >
-                        {/* Use an actual image for the seaweed */}
                         <div className="relative h-full w-full flex items-center justify-center">
                           <img 
                             src={seaweedImage} 
@@ -582,11 +612,7 @@ export default function SeaweedFarmer() {
                         </div>
                         
                         <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center z-10">
-                          {SEAWEED_TYPES[seaweed.type].name}
-                          <br />
-                          {stage.name}
-                          <br />
-                          {displayValue} energy
+                          {stage.name} {displayValue}
                         </div>
                       </div>
                     </TooltipTrigger>
@@ -604,44 +630,34 @@ export default function SeaweedFarmer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-2">
             <Button
               onClick={() => dispatch({ type: 'PLANT_SEAWEED' })}
-              size="lg"
-              className="w-full bg-green-500 hover:bg-green-600"
+              size="sm"
+              className="w-full bg-green-500 hover:bg-green-600 h-8"
             >
               Plant {SEAWEED_TYPES[gameState.selectedSeaweedType].name} ({SEAWEED_TYPES[gameState.selectedSeaweedType].energyCost} energy)
             </Button>
 
-            <Card className="border shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-center space-x-2">
-                  <Info className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm text-muted-foreground">
-                    {SEAWEED_TYPES[gameState.selectedSeaweedType].description}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+            {gameState.eventMessage && (
+              <Alert variant="default" className="border shadow-sm py-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">{gameState.eventMessage}</AlertDescription>
+              </Alert>
+            )}
           </div>
-
-          {gameState.eventMessage && (
-            <Alert variant="default" className="border shadow-sm">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{gameState.eventMessage}</AlertDescription>
-            </Alert>
-          )}
         </div>
 
-        {/* Right/Bottom section (Quiz) */}
-        <div className="w-full md:w-1/2 md:order-2 mt-4 md:mt-0">
-          <div className="sticky top-4">
-            <Quiz
-              questions={questions}
-              onCorrectAnswer={handleCorrectAnswer}
-              onIncorrectAnswer={handleIncorrectAnswer}
-            />
-          </div>
+        {/* Bottom section (Quiz) in vertical mode */}
+        <div 
+          className="w-full md:w-1/2 md:order-2 p-2 overflow-auto" 
+          style={{ height: isVertical ? verticalBottomHeight : 'auto' }}
+        >
+          <Quiz
+            questions={questions}
+            onCorrectAnswer={handleCorrectAnswer}
+            onIncorrectAnswer={handleIncorrectAnswer}
+          />
         </div>
       </div>
 
@@ -655,6 +671,11 @@ export default function SeaweedFarmer() {
         .seaweed-plot {
           animation: sway 5s infinite ease-in-out;
           position: relative;
+        }
+        
+        /* Prevent body scrolling if the game components handle their own scrolling */
+        body {
+          overflow: hidden;
         }
       `}</style>
     </div>
