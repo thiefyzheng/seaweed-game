@@ -27,6 +27,7 @@ const Quiz: React.FC<QuizProps> = ({
   const [explanation, setExplanation] = useState<string>('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [rewardSeaweed, setRewardSeaweed] = useState<SeaweedType | null>(null);
+  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const seaweedTypes: SeaweedType[] = ['EUCHEUMA', 'GRACILARIA', 'SARGASSUM'];
@@ -37,7 +38,9 @@ const Quiz: React.FC<QuizProps> = ({
   };
 
   const handleAnswerClick = (answer: string) => {
-    setSelectedAnswer(answer);
+    if (!isAnswerSubmitted) {
+      setSelectedAnswer(answer);
+    }
   };
 
   const handleSubmitAnswer = () => {
@@ -46,7 +49,8 @@ const Quiz: React.FC<QuizProps> = ({
       return;
     }
 
-    setShowExplanation(false); // Hide explanation initially
+    setIsAnswerSubmitted(true);
+    setShowExplanation(true);
 
     if (selectedAnswer === currentQuestion.correctAnswer) {
       const randomSeaweed = getRandomSeaweed();
@@ -60,21 +64,21 @@ const Quiz: React.FC<QuizProps> = ({
     }
 
     setExplanation(currentQuestion.explanation || '');
-    setTimeout(() => {
-      setShowExplanation(true); // Show explanation after feedback
-    }, 1000); // 1-second delay before showing explanation
+  };
 
-    setTimeout(() => {
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-        setFeedback('');
-        setRewardSeaweed(null);
-        setShowExplanation(false);
-        setSelectedAnswer(null);
-      } else {
-        setFeedback('Quiz completed!');
-      }
-    }, 2000); // 2-second delay before moving to next question
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedAnswer(null);
+      setFeedback('');
+      setExplanation('');
+      setShowExplanation(false);
+      setRewardSeaweed(null);
+      setIsAnswerSubmitted(false);
+    } else {
+      setFeedback('Quiz completed!');
+      setShowExplanation(false);
+    }
   };
 
   return (
@@ -85,28 +89,42 @@ const Quiz: React.FC<QuizProps> = ({
         {currentQuestion.options.map((option) => (
           <button
             key={option}
-            className={`option-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${selectedAnswer === option ? 'bg-green-500' : ''}`}
+            className={`option-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+              selectedAnswer === option ? 'bg-green-500' : ''
+            } ${isAnswerSubmitted ? 'cursor-not-allowed opacity-75' : ''}`}
             onClick={() => handleAnswerClick(option)}
+            disabled={isAnswerSubmitted}
           >
             {option}
           </button>
         ))}
       </div>
-      <button
-        onClick={handleSubmitAnswer}
-        disabled={!selectedAnswer}
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
-      >
-        Submit Answer
-      </button>
+      <div className="button-container mb-4">
+        {!isAnswerSubmitted ? (
+          <button
+            onClick={handleSubmitAnswer}
+            disabled={!selectedAnswer}
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
+          >
+            Submit Answer
+          </button>
+        ) : (
+          <button
+            onClick={handleNextQuestion}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+          </button>
+        )}
+      </div>
       <div className="feedback mt-4 text-center">
-        {feedback}
+        {feedback && <p>{feedback}</p>}
         {rewardSeaweed && (
           <div className="seaweed-reward mt-2">
             <span
               className={`inline-block w-6 h-6 rounded-full ${
-                rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' : 
-                rewardSeaweed === 'GRACILARIA' ? 'bg-purple-400' : 
+                rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' :
+                rewardSeaweed === 'GRACILARIA' ? 'bg-purple-400' :
                 'bg-green-400'
               } mr-2`}
             ></span>
