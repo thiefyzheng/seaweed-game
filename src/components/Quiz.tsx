@@ -25,9 +25,10 @@ const Quiz: React.FC<QuizProps> = ({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>('');
   const [explanation, setExplanation] = useState<string>('');
-  const [showExplanation, setShowExplanation] = useState(false);
   const [rewardSeaweed, setRewardSeaweed] = useState<SeaweedType | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const seaweedTypes: SeaweedType[] = ['EUCHEUMA', 'GRACILARIA', 'SARGASSUM'];
@@ -50,9 +51,11 @@ const Quiz: React.FC<QuizProps> = ({
     }
 
     setIsAnswerSubmitted(true);
-    setShowExplanation(true);
-
-    if (selectedAnswer === currentQuestion.correctAnswer) {
+    
+    const correct = selectedAnswer === currentQuestion.correctAnswer;
+    setIsCorrect(correct);
+    
+    if (correct) {
       const randomSeaweed = getRandomSeaweed();
       setRewardSeaweed(randomSeaweed);
       setFeedback(`Correct! You earned a ${randomSeaweed} seaweed!`);
@@ -64,6 +67,12 @@ const Quiz: React.FC<QuizProps> = ({
     }
 
     setExplanation(currentQuestion.explanation || '');
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    handleNextQuestion();
   };
 
   const handleNextQuestion = () => {
@@ -72,12 +81,15 @@ const Quiz: React.FC<QuizProps> = ({
       setSelectedAnswer(null);
       setFeedback('');
       setExplanation('');
-      setShowExplanation(false);
       setRewardSeaweed(null);
       setIsAnswerSubmitted(false);
     } else {
+      // Reset quiz or show completion message
       setFeedback('Quiz completed!');
-      setShowExplanation(false);
+      // Optionally restart the quiz
+      setCurrentQuestionIndex(0);
+      setSelectedAnswer(null);
+      setIsAnswerSubmitted(false);
     }
   };
 
@@ -90,7 +102,7 @@ const Quiz: React.FC<QuizProps> = ({
           <button
             key={option}
             className={`option-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-              selectedAnswer === option ? 'bg-green-500' : ''
+              selectedAnswer === option ? 'bg-blue-700' : ''
             } ${isAnswerSubmitted ? 'cursor-not-allowed opacity-75' : ''}`}
             onClick={() => handleAnswerClick(option)}
             disabled={isAnswerSubmitted}
@@ -100,44 +112,60 @@ const Quiz: React.FC<QuizProps> = ({
         ))}
       </div>
       <div className="button-container mb-4">
-        {!isAnswerSubmitted ? (
-          <button
-            onClick={handleSubmitAnswer}
-            disabled={!selectedAnswer}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
-          >
-            Submit Answer
-          </button>
-        ) : (
-          <button
-            onClick={handleNextQuestion}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
-          </button>
-        )}
+        <button
+          onClick={handleSubmitAnswer}
+          disabled={!selectedAnswer || isAnswerSubmitted}
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
+        >
+          Submit Answer
+        </button>
       </div>
-      <div className="feedback mt-4 text-center">
-        {feedback && <p>{feedback}</p>}
-        {rewardSeaweed && (
-          <div className="seaweed-reward mt-2">
-            <span
-              className={`inline-block w-6 h-6 rounded-full ${
-                rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' :
-                rewardSeaweed === 'GRACILARIA' ? 'bg-purple-400' :
-                'bg-green-400'
-              } mr-2`}
-            ></span>
-            {rewardSeaweed}
+
+      {/* Custom Feedback Dialog */}
+      {isDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <h3 className={`text-xl font-bold ${isCorrect ? "text-green-600" : "text-red-600"}`}>
+                {isCorrect ? "Correct!" : "Incorrect!"}
+              </h3>
+              <p className="mt-2">{feedback}</p>
+              
+              {rewardSeaweed && (
+                <div className="mt-4 flex items-center">
+                  <span
+                    className={`inline-block w-6 h-6 rounded-full ${
+                      rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' :
+                      rewardSeaweed === 'GRACILARIA' ? 'bg-purple-400' :
+                      'bg-green-400'
+                    } mr-2`}
+                  ></span>
+                  <span>{rewardSeaweed} added to your farm!</span>
+                </div>
+              )}
+              
+              {explanation && (
+                <div className="mt-4 p-3 bg-gray-100 rounded">
+                  <p className="font-semibold">Explanation:</p>
+                  <p>{explanation}</p>
+                  <p className="mt-2">
+                    <span className="font-semibold">Correct Answer:</span> {currentQuestion.correctAnswer}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={handleDialogClose}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+              </button>
+            </div>
           </div>
-        )}
-        {showExplanation && explanation && (
-          <div className="explanation mt-2">
-            <p>Explanation: {explanation}</p>
-            <p>Correct Answer: {currentQuestion.correctAnswer}</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
