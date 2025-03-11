@@ -93,31 +93,79 @@ const Quiz: React.FC<QuizProps> = ({
     }
   };
 
+  // Determine button sizing based on number of options
+  const getButtonClasses = () => {
+    const baseClasses = "option-button text-white font-bold rounded focus:outline-none focus:shadow-outline";
+    const selectedClasses = selectedAnswer ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-700";
+    const disabledClasses = isAnswerSubmitted ? "cursor-not-allowed opacity-75" : "";
+    
+    // Adjust padding and text size based on number of options
+    let sizingClasses = "";
+    if (currentQuestion.options.length <= 4) {
+      // For 4 or fewer options, maintain normal size
+      sizingClasses = "py-2 px-3 text-sm";
+    } else if (currentQuestion.options.length <= 6) {
+      // Medium reduction for 5-6 options
+      sizingClasses = "py-1.5 px-2 text-xs";
+    } else {
+      // Maximum reduction for 7+ options
+      sizingClasses = "py-1 px-1.5 text-xs";
+    }
+    
+    return `${baseClasses} ${selectedClasses} ${disabledClasses} ${sizingClasses}`;
+  };
+
+  // Determine grid columns based on number of options
+  const getGridClasses = () => {
+    const optionCount = currentQuestion.options.length;
+    
+    if (optionCount <= 2) {
+      return "grid-cols-1";
+    } else if (optionCount <= 6) {
+      return "grid-cols-2";
+    } else {
+      return "grid-cols-3";
+    }
+  };
+
+  // Determine question text size based on length
+  const getQuestionClasses = () => {
+    const length = currentQuestion.question.length;
+    
+    if (length < 70) {
+      return "text-lg";
+    } else if (length < 150) {
+      return "text-base";
+    } else {
+      return "text-sm";
+    }
+  };
+
   return (
-    <div className="quiz-container bg-white rounded-lg shadow-md p-4 flex flex-col h-full max-h-screen">
-      <h2 className="text-xl font-semibold mb-2">Quiz</h2>
+    <div className="quiz-container bg-white rounded-lg shadow-md p-3 flex flex-col h-full">
+      <h2 className="text-lg font-semibold mb-2">Quiz</h2>
       
-      {/* Scrollable question and options area */}
-      <div className="flex-grow overflow-y-auto mb-4 pr-2">
-        <div className="question text-lg mb-3">{currentQuestion.question}</div>
-        <div className="options grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {currentQuestion.options.map((option) => (
-            <button
-              key={option}
-              className={`option-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded focus:outline-none focus:shadow-outline ${
-                selectedAnswer === option ? 'bg-blue-700' : ''
-              } ${isAnswerSubmitted ? 'cursor-not-allowed opacity-75' : ''}`}
-              onClick={() => handleAnswerClick(option)}
-              disabled={isAnswerSubmitted}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
+      {/* Auto-scaling question area */}
+      <div className={`question ${getQuestionClasses()} mb-2 line-clamp-3`}>
+        {currentQuestion.question}
       </div>
       
-      {/* Fixed-position submit button at the bottom */}
-      <div className="button-container sticky bottom-0 bg-white pt-2 border-t border-gray-200">
+      {/* Auto-scaling options grid */}
+      <div className={`options grid ${getGridClasses()} gap-2 mb-3`}>
+        {currentQuestion.options.map((option) => (
+          <button
+            key={option}
+            className={getButtonClasses()}
+            onClick={() => handleAnswerClick(option)}
+            disabled={isAnswerSubmitted}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      
+      {/* Submit button */}
+      <div className="button-container mt-auto">
         <button
           onClick={handleSubmitAnswer}
           disabled={!selectedAnswer || isAnswerSubmitted}
