@@ -94,28 +94,34 @@ const Quiz: React.FC<QuizProps> = ({
   };
 
   return (
-    <div className="quiz-container bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-semibold mb-4">Quiz</h2>
-      <div className="question text-lg mb-4">{currentQuestion.question}</div>
-      <div className="options grid grid-cols-2 gap-4 mb-4">
-        {currentQuestion.options.map((option) => (
-          <button
-            key={option}
-            className={`option-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-              selectedAnswer === option ? 'bg-blue-700' : ''
-            } ${isAnswerSubmitted ? 'cursor-not-allowed opacity-75' : ''}`}
-            onClick={() => handleAnswerClick(option)}
-            disabled={isAnswerSubmitted}
-          >
-            {option}
-          </button>
-        ))}
+    <div className="quiz-container bg-white rounded-lg shadow-md p-4 flex flex-col h-full max-h-screen">
+      <h2 className="text-xl font-semibold mb-2">Quiz</h2>
+      
+      {/* Scrollable question and options area */}
+      <div className="flex-grow overflow-y-auto mb-4 pr-2">
+        <div className="question text-lg mb-3">{currentQuestion.question}</div>
+        <div className="options grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {currentQuestion.options.map((option) => (
+            <button
+              key={option}
+              className={`option-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded focus:outline-none focus:shadow-outline ${
+                selectedAnswer === option ? 'bg-blue-700' : ''
+              } ${isAnswerSubmitted ? 'cursor-not-allowed opacity-75' : ''}`}
+              onClick={() => handleAnswerClick(option)}
+              disabled={isAnswerSubmitted}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="button-container mb-4">
+      
+      {/* Fixed-position submit button at the bottom */}
+      <div className="button-container sticky bottom-0 bg-white pt-2 border-t border-gray-200">
         <button
           onClick={handleSubmitAnswer}
           disabled={!selectedAnswer || isAnswerSubmitted}
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
+          className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
         >
           Submit Answer
         </button>
@@ -124,7 +130,7 @@ const Quiz: React.FC<QuizProps> = ({
       {/* Custom Feedback Dialog */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-4 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
             <div className="mb-4">
               <h3 className={`text-xl font-bold ${isCorrect ? "text-green-600" : "text-red-600"}`}>
                 {isCorrect ? "Correct!" : "Incorrect!"}
@@ -132,7 +138,7 @@ const Quiz: React.FC<QuizProps> = ({
               <p className="mt-2">{feedback}</p>
               
               {rewardSeaweed && (
-                <div className="mt-4 flex items-center">
+                <div className="mt-3 flex items-center">
                   <span
                     className={`inline-block w-6 h-6 rounded-full ${
                       rewardSeaweed === 'EUCHEUMA' ? 'bg-red-400' :
@@ -145,7 +151,7 @@ const Quiz: React.FC<QuizProps> = ({
               )}
               
               {explanation && (
-                <div className="mt-4 p-3 bg-gray-100 rounded">
+                <div className="mt-3 p-3 bg-gray-100 rounded">
                   <p className="font-semibold">Explanation:</p>
                   <p>{explanation}</p>
                   <p className="mt-2">
