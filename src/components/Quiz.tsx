@@ -98,9 +98,11 @@ const Quiz: React.FC<QuizProps> = ({
     const baseClasses = "option-button text-white font-bold rounded focus:outline-none focus:shadow-outline";
     const disabledClasses = isAnswerSubmitted ? "cursor-not-allowed opacity-75" : "";
     
-    // Handle the selected state
+    // Handle the selected state - use green for selected instead of blue
     const isSelected = selectedAnswer === option;
-    const selectedClasses = isSelected ? "bg-blue-700 ring-2 ring-blue-300" : "bg-blue-500 hover:bg-blue-700";
+    const selectedClasses = isSelected 
+      ? "bg-green-600 ring-2 ring-green-300" 
+      : "bg-blue-500 hover:bg-blue-700";
     
     // Adjust padding and text size based on number of options
     let sizingClasses = "";
