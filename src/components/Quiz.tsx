@@ -94,10 +94,13 @@ const Quiz: React.FC<QuizProps> = ({
   };
 
   // Determine button sizing based on number of options
-  const getButtonClasses = () => {
+  const getButtonClasses = (option: string) => {
     const baseClasses = "option-button text-white font-bold rounded focus:outline-none focus:shadow-outline";
-    const selectedClasses = selectedAnswer ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-700";
     const disabledClasses = isAnswerSubmitted ? "cursor-not-allowed opacity-75" : "";
+    
+    // Handle the selected state
+    const isSelected = selectedAnswer === option;
+    const selectedClasses = isSelected ? "bg-blue-700 ring-2 ring-blue-300" : "bg-blue-500 hover:bg-blue-700";
     
     // Adjust padding and text size based on number of options
     let sizingClasses = "";
@@ -155,7 +158,7 @@ const Quiz: React.FC<QuizProps> = ({
         {currentQuestion.options.map((option) => (
           <button
             key={option}
-            className={getButtonClasses()}
+            className={getButtonClasses(option)}
             onClick={() => handleAnswerClick(option)}
             disabled={isAnswerSubmitted}
           >
