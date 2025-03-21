@@ -74,7 +74,7 @@ const questions: Question[] = [
   },
   {
     question: "Which organization plays a significant role in promoting seaweed farming in Malaysia?",
-    options: ["Department of Fisheries Malaysia (DoFM)", "Sabah Economic Development and Investment Authority", "University of Malaya"],
+    options: ["Department of Fisheries Malaysia (DoFM)", "Sabah Economic Development and Investment Authority", "University of Malaya", "All of the above"],
     correctAnswer: "All of the above",
     reward: 10,
     type: "seaweed",
